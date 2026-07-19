@@ -671,7 +671,8 @@ function yamlGet(raw, key) {
 function yamlSetLine(raw, key, value) {
   var escaped = key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   var re = new RegExp('^[ \\t]*' + escaped + ':\\s*.*', 'm');
-  if (value === '' || value === "''") {
+  // Normalize empty-ish values
+  if (!value || value === "''" || /^'+$/.test(value)) {
     value = "''";
   } else if (/[:#{}&*!|>'"%@`,\[\]\n]/.test(value)) {
     value = "'" + value.replace(/'/g, "''") + "'";
