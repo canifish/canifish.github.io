@@ -1,0 +1,429 @@
+/* ===== Reset & Base ===== */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 16px;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+    "Hiragino Sans GB", "Microsoft YaHei", "Helvetica Neue", Helvetica, Arial,
+    sans-serif;
+  line-height: 1.75;
+  color: #333;
+  background: #fff;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ===== Dark Mode ===== */
+@media (prefers-color-scheme: dark) {
+  body {
+    color: #ddd;
+    background: #1a1a2e;
+  }
+  a { color: #7aa2f7; }
+  .post-content pre,
+  .post-content code {
+    background: #16213e;
+  }
+  .post-content img {
+    opacity: 0.85;
+  }
+  .password-form input {
+    background: #2a2a4a;
+    border-color: #444;
+    color: #ddd;
+  }
+  .password-form button {
+    background: #7aa2f7;
+  }
+  .tag { background: #2a2a4a; }
+}
+
+a {
+  color: #2563eb;
+  text-decoration: none;
+}
+a:hover {
+  text-decoration: underline;
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+}
+
+.container {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+/* ===== Header ===== */
+.header {
+  border-bottom: 1px solid #e5e7eb;
+  padding: 24px 0;
+}
+@media (prefers-color-scheme: dark) {
+  .header { border-color: #2a2a4a; }
+}
+
+.header .container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.site-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #111;
+}
+@media (prefers-color-scheme: dark) {
+  .site-title { color: #fff; }
+}
+.site-title:hover {
+  text-decoration: none;
+}
+
+.nav {
+  display: flex;
+  gap: 20px;
+}
+.nav a {
+  font-size: 0.95rem;
+  color: #666;
+}
+@media (prefers-color-scheme: dark) {
+  .nav a { color: #999; }
+}
+.nav a:hover {
+  color: #2563eb;
+  text-decoration: none;
+}
+
+/* ===== Main ===== */
+.main {
+  flex: 1;
+  padding: 40px 0;
+}
+
+/* ===== Post List ===== */
+.post-item {
+  padding: 32px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+@media (prefers-color-scheme: dark) {
+  .post-item { border-color: #2a2a4a; }
+}
+.post-item:first-child {
+  padding-top: 0;
+}
+
+.post-title {
+  font-size: 1.35rem;
+  font-weight: 600;
+  margin-bottom: 6px;
+  line-height: 1.4;
+}
+.post-title a {
+  color: #111;
+}
+@media (prefers-color-scheme: dark) {
+  .post-title a { color: #eee; }
+}
+.post-title a:hover {
+  color: #2563eb;
+  text-decoration: none;
+}
+
+.lock-icon {
+  font-size: 1rem;
+}
+
+.post-date {
+  font-size: 0.875rem;
+  color: #999;
+  display: block;
+  margin-bottom: 8px;
+}
+
+.post-excerpt {
+  margin-top: 10px;
+  color: #666;
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
+@media (prefers-color-scheme: dark) {
+  .post-excerpt { color: #aaa; }
+}
+
+/* ===== Tags ===== */
+.post-tags {
+  margin-top: 10px;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.tag {
+  display: inline-block;
+  padding: 2px 10px;
+  font-size: 0.8rem;
+  background: #f3f4f6;
+  border-radius: 12px;
+  color: #666;
+}
+.tag:hover {
+  background: #e5e7eb;
+  text-decoration: none;
+}
+
+/* ===== Single Post ===== */
+.post-header {
+  margin-bottom: 32px;
+  text-align: center;
+}
+.post-header .post-title {
+  font-size: 1.8rem;
+}
+
+.post-content {
+  font-size: 1.05rem;
+  line-height: 1.85;
+}
+.post-content h2 {
+  font-size: 1.4rem;
+  margin: 2em 0 0.6em;
+}
+.post-content h3 {
+  font-size: 1.2rem;
+  margin: 1.6em 0 0.4em;
+}
+.post-content p {
+  margin: 1em 0;
+}
+.post-content ul, .post-content ol {
+  padding-left: 1.5em;
+  margin: 0.8em 0;
+}
+.post-content li {
+  margin: 0.3em 0;
+}
+.post-content blockquote {
+  border-left: 4px solid #2563eb;
+  padding: 4px 16px;
+  margin: 1em 0;
+  color: #666;
+  background: #f9fafb;
+  border-radius: 0 4px 4px 0;
+}
+@media (prefers-color-scheme: dark) {
+  .post-content blockquote {
+    color: #aaa;
+    background: #16213e;
+  }
+}
+.post-content pre {
+  background: #f5f5f5;
+  border-radius: 6px;
+  padding: 16px 20px;
+  overflow-x: auto;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  margin: 1em 0;
+}
+.post-content code {
+  font-family: "SF Mono", "Fira Code", "Fira Mono", "Roboto Mono",
+    "Courier New", monospace;
+  font-size: 0.88em;
+}
+.post-content :not(pre) > code {
+  background: #f0f0f0;
+  padding: 2px 6px;
+  border-radius: 3px;
+}
+@media (prefers-color-scheme: dark) {
+  .post-content :not(pre) > code {
+    background: #2a2a4a;
+  }
+}
+.post-content img {
+  border-radius: 6px;
+  display: block;
+  margin: 1.5em auto;
+}
+
+/* ===== Encrypted Post ===== */
+.password-prompt {
+  text-align: center;
+  padding: 60px 20px;
+  background: #f9fafb;
+  border-radius: 8px;
+  margin: 40px 0;
+}
+@media (prefers-color-scheme: dark) {
+  .password-prompt { background: #16213e; }
+}
+
+.password-prompt .password-hint {
+  font-size: 1.1rem;
+  color: #666;
+  margin-bottom: 8px;
+}
+.hint-text {
+  font-size: 0.9rem;
+  color: #999;
+  margin-bottom: 20px;
+}
+
+.password-form {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin-top: 16px;
+}
+.password-form input {
+  padding: 10px 16px;
+  font-size: 1rem;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  outline: none;
+  transition: border-color 0.2s;
+  min-width: 200px;
+}
+.password-form input:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+.password-form button {
+  padding: 10px 24px;
+  font-size: 1rem;
+  font-weight: 500;
+  color: #fff;
+  background: #2563eb;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.password-form button:hover {
+  background: #1d4ed8;
+}
+.password-form button:active {
+  background: #1e40af;
+}
+
+.error-msg {
+  color: #dc2626;
+  font-size: 0.9rem;
+  margin-top: 12px;
+  min-height: 1.5em;
+}
+
+/* Decrypted content */
+#decrypted-content {
+  animation: fadeIn 0.3s ease;
+}
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ===== Pagination ===== */
+.pagination {
+  display: flex;
+  justify-content: space-between;
+  padding: 32px 0;
+}
+.pagination a {
+  font-size: 0.95rem;
+}
+
+/* ===== Archive ===== */
+.archive h1 {
+  font-size: 1.6rem;
+  margin-bottom: 24px;
+}
+.archive-year {
+  font-size: 1.2rem;
+  color: #2563eb;
+  margin: 24px 0 12px;
+}
+.archive-item {
+  padding: 8px 0;
+  display: flex;
+  gap: 16px;
+  align-items: baseline;
+}
+.archive-item time {
+  font-size: 0.85rem;
+  color: #999;
+  min-width: 50px;
+  flex-shrink: 0;
+}
+.archive-item a {
+  font-size: 1rem;
+}
+
+/* ===== Page ===== */
+.page-title {
+  font-size: 1.6rem;
+  text-align: center;
+  margin-bottom: 32px;
+}
+.page-content {
+  font-size: 1.05rem;
+  line-height: 1.85;
+}
+.page-content h2 {
+  margin: 1.5em 0 0.5em;
+}
+.page-content p {
+  margin: 1em 0;
+}
+
+/* ===== Footer ===== */
+.footer {
+  border-top: 1px solid #e5e7eb;
+  padding: 24px 0;
+  text-align: center;
+  font-size: 0.85rem;
+  color: #999;
+  margin-top: auto;
+}
+@media (prefers-color-scheme: dark) {
+  .footer { border-color: #2a2a4a; }
+}
+.footer a {
+  color: #999;
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 640px) {
+  .header .container {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .post-header .post-title {
+    font-size: 1.4rem;
+  }
+  .password-form {
+    flex-direction: column;
+    align-items: center;
+  }
+  .password-form input {
+    min-width: 100%;
+  }
+  .password-form button {
+    width: 100%;
+  }
+}
