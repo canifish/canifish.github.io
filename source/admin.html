@@ -671,11 +671,11 @@ function yamlGet(raw, key) {
 function yamlSetLine(raw, key, value) {
   var escaped = key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   var re = new RegExp('^[ \\t]*' + escaped + ':\\s*.*', 'm');
-  // Quote values that contain special YAML chars
-  if (value && /[:#{}&*!|>'"%@`,\[\]\n]/.test(value)) {
+  if (value === '' || value === "''") {
+    value = "''";
+  } else if (/[:#{}&*!|>'"%@`,\[\]\n]/.test(value)) {
     value = "'" + value.replace(/'/g, "''") + "'";
   }
-  if (value === '' || value === "''") value = "''";
   if (raw.match(re)) {
     return raw.replace(re, key + ': ' + value);
   }
