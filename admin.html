@@ -370,7 +370,7 @@ function loadPosts() {
 
 function readPost(file) {
   return api('/repos/' + REPO + '/contents/source/_posts/' + file.name).then(function(data) {
-    return { sha: data.sha, content: atob(data.content), path: data.path };
+    return { sha: data.sha, content: fromBase64(data.content), path: data.path };
   });
 }
 
@@ -432,7 +432,7 @@ function encryptContent(password, plaintext) {
 function savePost(meta, body, sha) {
   var frontmatter = buildFrontmatter(meta);
   var raw = body ? frontmatter + '\n' + body : frontmatter + '\n';
-  var content = btoa(unescape(encodeURIComponent(raw)));
+  var content = toBase64(raw);
   var fileName = (meta.slug || meta.title.replace(/[\/\\:*?"<>|]/g, '').replace(/\s+/g, '-').toLowerCase()) + '.md';
   if (!fileName.endsWith('.md')) fileName += '.md';
 
@@ -671,30 +671,41 @@ function switchTab(name) {
 var CFG_SHA = null, THEME_CFG_SHA = null;
 var CFG_RAW = '', THEME_CFG_RAW = '';
 
+function toBase64(str) {
+  var bytes = new TextEncoder().encode(str);
+  var bin = '';
+  for (var i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+  return btoa(bin);
+}
+
+function fromBase64(b64) {
+  try {
+    var bin = atob(b64.replace(/\s/g, ''));
+    var bytes = new Uint8Array(bin.length);
+    for (var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    return new TextDecoder().decode(bytes);
+  } catch (e) { return ''; }
+}
+
 function yamlGet(raw, key) {
-  var re = new RegExp('^' + key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ':\\s*(.*)', 'm');
+  var re = new RegExp('^[ \\t]*' + key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ':\\s*(.*)', 'm');
   var m = raw.match(re);
-  return m ? m[1].trim() : '';
+  if (!m) return '';
+  return m[1].trim().replace(/^['"](.*)['"]$/, '$1');
 }
 
-function yamlSet(raw, key, value) {
+function yamlSetLine(raw, key, value) {
   var escaped = key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  var re = new RegExp('^' + escaped + ':\\s*.*', 'm');
+  var re = new RegExp('^[ \\t]*' + escaped + ':\\s*.*', 'm');
+  // Quote values that contain special YAML chars
+  if (value && /[:#{}&*!|>'"%@`,\[\]\n]/.test(value)) {
+    value = "'" + value.replace(/'/g, "''") + "'";
+  }
+  if (value === '' || value === "''") value = "''";
   if (raw.match(re)) {
     return raw.replace(re, key + ': ' + value);
-  } else {
-    return raw + '\n' + key + ': ' + value;
   }
-}
-
-function yamlSetQuoted(raw, key, value) {
-  var escaped = key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  var re = new RegExp('^' + escaped + ':\\s*.*', 'm');
-  if (raw.match(re)) {
-    return raw.replace(re, key + ': ' + value);
-  } else {
-    return raw + '\n' + key + ': ' + value;
-  }
+  return raw + '\n' + key + ': ' + value;
 }
 
 function loadSettings() {
@@ -704,8 +715,8 @@ function loadSettings() {
     api('/repos/' + REPO + '/contents/themes/minimal/_config.yml')
   ]).then(function(results) {
     var cfg = results[0], theme = results[1];
-    CFG_SHA = cfg.sha; CFG_RAW = atob(cfg.content);
-    THEME_CFG_SHA = theme.sha; THEME_CFG_RAW = atob(theme.content);
+    CFG_SHA = cfg.sha; CFG_RAW = fromBase64(cfg.content);
+    THEME_CFG_SHA = theme.sha; THEME_CFG_RAW = fromBase64(theme.content);
 
     $('cfg-title').value = yamlGet(CFG_RAW, 'title');
     $('cfg-subtitle').value = yamlGet(CFG_RAW, 'subtitle');
@@ -715,8 +726,7 @@ function loadSettings() {
     $('cfg-per-page').value = yamlGet(CFG_RAW, 'per_page') || '10';
 
     // Parse menu from theme config
-    var menuRaw = THEME_CFG_RAW;
-    var menus = menuRaw.match(/menu:\n([\s\S]*?)(?=\n\w|$)/);
+    var menus = THEME_CFG_RAW.match(/menu:\n([\s\S]*?)(?=\n\w|$)/);
     if (menus) {
       var lines = menus[1].split('\n');
       var mi = 0;
@@ -730,10 +740,10 @@ function loadSettings() {
       });
     }
 
-    $('cfg-bg-image').value = yamlGet(THEME_CFG_RAW, 'bg_image') || '';
+    $('cfg-bg-image').value = yamlGet(THEME_CFG_RAW, 'bg_image');
     updateBgPreview();
     $('cfg-dark-mode').value = yamlGet(THEME_CFG_RAW, 'dark_mode') || 'true';
-    $('cfg-social-github').value = yamlGet(THEME_CFG_RAW, 'github') || '';
+    $('cfg-social-github').value = yamlGet(THEME_CFG_RAW, 'github');
 
     setSettingsStatus('已加载');
   }).catch(function(err) {
@@ -754,50 +764,54 @@ function updateBgPreview() {
 function setSettingsStatus(msg) { var el = $('settings-status'); if (el) el.textContent = msg; }
 
 function saveSettings() {
+  if (!CFG_SHA || !THEME_CFG_SHA) {
+    setSettingsStatus('请等待设置加载完成后再保存');
+    return;
+  }
   setSettingsStatus('保存中...');
 
   var cfg = CFG_RAW;
-  cfg = yamlSet(cfg, 'title', $('cfg-title').value.trim() || 'My Blog');
-  cfg = yamlSet(cfg, 'subtitle', $('cfg-subtitle').value.trim() || "''");
-  cfg = yamlSet(cfg, 'description', $('cfg-desc').value.trim() || "''");
-  cfg = yamlSet(cfg, 'author', $('cfg-author').value.trim() || '');
-  cfg = yamlSet(cfg, 'language', $('cfg-lang').value.trim() || 'zh-CN');
-  // per_page is nested under index_generator
-  cfg = cfg.replace(/^(\s{2}per_page:\s*).*/m, '  per_page: ' + ($('cfg-per-page').value || '10'));
-  if (!cfg.match(/^\s{2}per_page:/m)) {
+  cfg = yamlSetLine(cfg, 'title', $('cfg-title').value.trim() || 'My Blog');
+  cfg = yamlSetLine(cfg, 'subtitle', $('cfg-subtitle').value.trim() || "''");
+  cfg = yamlSetLine(cfg, 'description', $('cfg-desc').value.trim() || "''");
+  cfg = yamlSetLine(cfg, 'author', $('cfg-author').value.trim() || '');
+  cfg = yamlSetLine(cfg, 'language', $('cfg-lang').value.trim() || 'zh-CN');
+  cfg = cfg.replace(/^([ \t]*per_page:\s*).*/m, '$1' + ($('cfg-per-page').value || '10'));
+  if (!cfg.match(/^[ \t]*per_page:/m)) {
     cfg = cfg.replace(/(index_generator:\n)/, '$1  per_page: ' + ($('cfg-per-page').value || '10') + '\n');
   }
 
   var theme = THEME_CFG_RAW;
-  // Update menu section
   var m1n = $('cfg-menu1-name').value.trim() || 'Home';
   var m1u = $('cfg-menu1-url').value.trim() || '/';
   var m2n = $('cfg-menu2-name').value.trim() || 'Archives';
   var m2u = $('cfg-menu2-url').value.trim() || '/archives';
-  theme = theme.replace(/menu:\n([\s\S]*?)(?=\n\w|$)/, function(match) {
+  theme = theme.replace(/menu:\n([\s\S]*?)(?=\n\w|$)/, function() {
     return 'menu:\n  ' + m1n + ': ' + m1u + '\n  ' + m2n + ': ' + m2u;
   });
 
-  theme = yamlSet(theme, 'bg_image', $('cfg-bg-image').value.trim() || "''");
-  theme = yamlSet(theme, 'dark_mode', $('cfg-dark-mode').value);
-  theme = yamlSet(theme, 'github', $('cfg-social-github').value.trim() || "''");
+  theme = yamlSetLine(theme, 'bg_image', $('cfg-bg-image').value.trim() || "''");
+  theme = yamlSetLine(theme, 'dark_mode', $('cfg-dark-mode').value);
+  theme = yamlSetLine(theme, 'github', $('cfg-social-github').value.trim() || "''");
 
-  var cfgPayload = { message: 'Update site config', content: btoa(unescape(encodeURIComponent(cfg))), sha: CFG_SHA, branch: 'main' };
-  var themePayload = { message: 'Update theme config', content: btoa(unescape(encodeURIComponent(theme))), sha: THEME_CFG_SHA, branch: 'main' };
+  var cfgPayload = { message: 'Update site config', content: toBase64(cfg), sha: CFG_SHA, branch: 'main' };
+  var themePayload = { message: 'Update theme config', content: toBase64(theme), sha: THEME_CFG_SHA, branch: 'main' };
 
   Promise.all([
     api('/repos/' + REPO + '/contents/_config.yml', { method: 'PUT', body: cfgPayload }),
     api('/repos/' + REPO + '/contents/themes/minimal/_config.yml', { method: 'PUT', body: themePayload })
-  ]).then(function() {
+  ]).then(function(results) {
+    CFG_SHA = results[0].content.sha;
+    THEME_CFG_SHA = results[1].content.sha;
     setSettingsStatus('已保存，正在部署...');
     return triggerDeploy().then(function() {
       setSettingsStatus('已部署！');
     }).catch(function() {
       setSettingsStatus('已保存（部署触发失败）');
     });
-    return loadSettings();
   }).catch(function(err) {
     setSettingsStatus('保存失败: ' + err.message);
+    console.error('saveSettings failed:', err);
   });
 }
 
