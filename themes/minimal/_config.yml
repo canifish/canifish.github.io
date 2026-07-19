@@ -6,8 +6,10 @@ menu:
   Archives: /archives
 
 # Social links (optional)
-social:
-  github: https://github.com/canifish
+github: https://github.com/canifish
+
+# Background image (optional, leave empty for none)
+bg_image: ''
 
 # Footer since year
 since: 2026

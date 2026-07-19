@@ -5,6 +5,9 @@
       <% for (var link in theme.menu) { %>
         <a href="<%- url_for(theme.menu[link]) %>"><%= link %></a>
       <% } %>
+      <% if (theme.github && theme.github !== "''") { %>
+        <a href="<%- theme.github %>" target="_blank" title="GitHub">GitHub</a>
+      <% } %>
     </nav>
   </div>
 </header>

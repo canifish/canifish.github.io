@@ -89,6 +89,39 @@ a{color:var(--primary);text-decoration:none}a:hover{text-decoration:underline}
   .form-row .form-group.small{flex:1}
 }
 .article-link{font-size:.8rem;color:var(--muted)}
+
+/* === Tabs === */
+.tab-bar{display:flex;gap:0;border-bottom:2px solid var(--border);margin-bottom:20px}
+.tab-btn{padding:10px 24px;font-size:.95rem;border:none;background:none;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;transition:all .15s}
+.tab-btn:hover{color:var(--text)}
+.tab-btn.active{color:var(--primary);border-bottom-color:var(--primary);font-weight:600}
+.tab-panel{display:none}
+.tab-panel.active{display:block}
+
+/* === Settings === */
+.settings-section{margin-bottom:24px}
+.settings-section h3{font-size:1rem;margin-bottom:12px;padding-bottom:6px;border-bottom:1px solid var(--border)}
+.settings-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:640px){.settings-grid{grid-template-columns:1fr}}
+.setting-field label{display:block;font-size:.85rem;color:var(--muted);margin-bottom:4px}
+.setting-field input,.setting-field textarea{width:100%;padding:8px 12px;font-size:.9rem;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text);font-family:inherit}
+.setting-field textarea{resize:vertical;min-height:80px}
+.setting-field input[type=color]{padding:2px 4px;height:36px;width:60px;cursor:pointer}
+.bg-preview{width:100%;height:80px;border-radius:6px;border:1px solid var(--border);margin-top:6px;background-size:cover;background-position:center;background-color:var(--surface)}
+
+/* === Drop Zone === */
+.drop-zone{border:2px dashed var(--border);border-radius:8px;padding:40px 20px;text-align:center;transition:all .2s;cursor:pointer;margin-bottom:20px}
+.drop-zone.drag-over{border-color:var(--primary);background:rgba(37,99,235,.05)}
+.drop-zone .dz-icon{font-size:2rem;margin-bottom:8px}
+.drop-zone p{color:var(--muted);font-size:.9rem}
+.drop-zone input[type=file]{display:none}
+.file-list{list-style:none}
+.file-list li{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:4px;font-size:.9rem}
+.file-list li:hover{background:var(--surface)}
+.file-list li img{width:40px;height:40px;object-fit:cover;border-radius:4px;border:1px solid var(--border)}
+.file-list li .fname{flex:1;word-break:break-all}
+.file-list li .furl{font-size:.8rem;color:var(--muted)}
+.upload-progress{margin-top:8px;font-size:.85rem;color:var(--primary)}
 </style>
 </head>
 <body>
@@ -106,66 +139,179 @@ a{color:var(--primary);text-decoration:none}a:hover{text-decoration:underline}
 <div class="app" id="app">
   <div class="topbar">
     <h1><a href="/" target="_blank">Blog Admin</a></h1>
-    <span class="article-link">文章来源: GitHub API (canifish/canifish.github.io)</span>
+    <span class="article-link">canifish/canifish.github.io</span>
     <div class="actions">
       <span class="status" id="status"></span>
-      <button class="btn" id="new-post-btn">+ 新文章</button>
-      <button class="btn btn-primary" id="save-btn">保存并发布</button>
       <button class="btn btn-sm" id="logout-btn">退出</button>
     </div>
   </div>
 
-  <div class="editor-layout">
-    <aside class="posts-sidebar">
-      <h3>文章列表</h3>
-      <div style="margin-bottom:8px">
-        <button class="btn btn-sm" id="refresh-btn">刷新</button>
-      </div>
-      <ul class="post-list" id="post-list"></ul>
-    </aside>
+  <div class="tab-bar" id="tab-bar">
+    <button class="tab-btn active" data-tab="posts">文章</button>
+    <button class="tab-btn" data-tab="settings">设置</button>
+    <button class="tab-btn" data-tab="files">文件</button>
+  </div>
 
-    <div class="main-area">
-      <form id="editor-form">
-        <div class="form-row">
-          <div class="form-group" style="flex:1">
-            <label>标题</label>
-            <input type="text" id="title-input" placeholder="文章标题">
-          </div>
-          <div class="form-group small">
-            <label>日期</label>
-            <input type="date" id="date-input">
-          </div>
+  <!-- ===== Posts Tab ===== -->
+  <div class="tab-panel active" id="tab-posts">
+    <div class="editor-layout">
+      <aside class="posts-sidebar">
+        <h3>文章列表</h3>
+        <div style="margin-bottom:8px;display:flex;gap:6px">
+          <button class="btn btn-sm" id="refresh-btn">刷新</button>
+          <button class="btn btn-sm" id="new-post-btn">+ 新文章</button>
         </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label>标签（逗号分隔）</label>
-            <input type="text" id="tags-input" placeholder="tech, life">
+        <ul class="post-list" id="post-list"></ul>
+      </aside>
+      <div class="main-area">
+        <form id="editor-form">
+          <div class="form-row">
+            <div class="form-group" style="flex:1">
+              <label>标题</label>
+              <input type="text" id="title-input" placeholder="文章标题">
+            </div>
+            <div class="form-group small">
+              <label>日期</label>
+              <input type="date" id="date-input">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>标签（逗号分隔）</label>
+              <input type="text" id="tags-input" placeholder="tech, life">
+            </div>
+            <div class="form-group">
+              <label>分类</label>
+              <input type="text" id="cat-input" placeholder="技术">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>密码（留空=公开文章）</label>
+              <input type="text" id="pw-input" placeholder="设置密码即可加密文章" autocomplete="off">
+            </div>
+            <div class="form-group">
+              <label>密码提示</label>
+              <input type="text" id="pw-hint-input" placeholder="可选，显示给读者">
+            </div>
           </div>
           <div class="form-group">
-            <label>分类</label>
-            <input type="text" id="cat-input" placeholder="技术">
+            <label>内容（Markdown）</label>
+            <textarea id="content-input" placeholder="## 开始写作...&#10;&#10;支持 Markdown 语法。"></textarea>
           </div>
+        </form>
+        <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px">
+          <button class="btn btn-primary" id="save-btn">保存并发布</button>
+          <details>
+            <summary style="cursor:pointer;color:var(--primary);font-size:.9rem">预览</summary>
+          </details>
         </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label>密码（留空=公开文章）</label>
-            <input type="text" id="pw-input" placeholder="设置密码即可加密文章" autocomplete="off">
-          </div>
-          <div class="form-group">
-            <label>密码提示</label>
-            <input type="text" id="pw-hint-input" placeholder="可选，显示给读者">
-          </div>
-        </div>
-        <div class="form-group">
-          <label>内容（Markdown）</label>
-          <textarea id="content-input" placeholder="## 开始写作...&#10;&#10;支持 Markdown 语法。"></textarea>
-        </div>
-      </form>
-      <details style="margin-bottom:12px">
-        <summary style="cursor:pointer;color:var(--primary);font-size:.9rem">预览</summary>
-        <div class="preview-pane" id="preview"></div>
-      </details>
+        <div class="preview-pane" id="preview" style="display:none"></div>
+      </div>
     </div>
+  </div>
+
+  <!-- ===== Settings Tab ===== -->
+  <div class="tab-panel" id="tab-settings">
+    <div class="settings-section">
+      <h3>站点信息</h3>
+      <div class="settings-grid">
+        <div class="setting-field">
+          <label>博客名称</label>
+          <input type="text" id="cfg-title" placeholder="My Blog">
+        </div>
+        <div class="setting-field">
+          <label>副标题</label>
+          <input type="text" id="cfg-subtitle" placeholder="副标题">
+        </div>
+        <div class="setting-field" style="grid-column:1/-1">
+          <label>站点描述</label>
+          <textarea id="cfg-desc" placeholder="博客描述..."></textarea>
+        </div>
+        <div class="setting-field">
+          <label>作者</label>
+          <input type="text" id="cfg-author" placeholder="Your Name">
+        </div>
+        <div class="setting-field">
+          <label>语言</label>
+          <input type="text" id="cfg-lang" placeholder="zh-CN">
+        </div>
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <h3>导航菜单</h3>
+      <div class="settings-grid">
+        <div class="setting-field">
+          <label>菜单项1 - 名称</label>
+          <input type="text" id="cfg-menu1-name" placeholder="Home">
+        </div>
+        <div class="setting-field">
+          <label>菜单项1 - 链接</label>
+          <input type="text" id="cfg-menu1-url" placeholder="/">
+        </div>
+        <div class="setting-field">
+          <label>菜单项2 - 名称</label>
+          <input type="text" id="cfg-menu2-name" placeholder="Archives">
+        </div>
+        <div class="setting-field">
+          <label>菜单项2 - 链接</label>
+          <input type="text" id="cfg-menu2-url" placeholder="/archives">
+        </div>
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <h3>外观主题</h3>
+      <div class="settings-grid">
+        <div class="setting-field">
+          <label>背景图片 URL</label>
+          <input type="text" id="cfg-bg-image" placeholder="https://... 或 /assets/bg.jpg（留空=无背景）">
+        </div>
+        <div class="setting-field">
+          <label>背景预览</label>
+          <div class="bg-preview" id="cfg-bg-preview"></div>
+        </div>
+        <div class="setting-field">
+          <label>暗色模式</label>
+          <select id="cfg-dark-mode" style="width:100%;padding:8px 12px;font-size:.9rem;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text)">
+            <option value="true">开启</option>
+            <option value="false">关闭</option>
+          </select>
+        </div>
+        <div class="setting-field">
+          <label>主页每页文章数</label>
+          <input type="number" id="cfg-per-page" min="1" max="50" value="10">
+        </div>
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <h3>社交链接</h3>
+      <div class="settings-grid">
+        <div class="setting-field">
+          <label>GitHub</label>
+          <input type="text" id="cfg-social-github" placeholder="https://github.com/yourname">
+        </div>
+      </div>
+    </div>
+
+    <button class="btn btn-primary" id="save-settings-btn">保存设置并重新部署</button>
+    <span class="status" id="settings-status" style="margin-left:12px"></span>
+  </div>
+
+  <!-- ===== Files Tab ===== -->
+  <div class="tab-panel" id="tab-files">
+    <div class="drop-zone" id="drop-zone">
+      <div class="dz-icon">📁</div>
+      <p>拖拽文件到此处上传，或点击选择文件</p>
+      <p style="font-size:.8rem">图片会存入 source/assets/ 目录，上传后自动部署</p>
+      <input type="file" id="file-input" multiple accept="image/*">
+    </div>
+    <div class="upload-progress" id="upload-progress"></div>
+    <h3 style="margin-bottom:10px">已上传文件</h3>
+    <button class="btn btn-sm" id="refresh-files-btn" style="margin-bottom:8px">刷新</button>
+    <ul class="file-list" id="file-list"></ul>
   </div>
 </div>
 
@@ -482,6 +628,234 @@ function doLogin() {
   });
 }
 
+// ===== Tab Switching =====
+function switchTab(name) {
+  document.querySelectorAll('.tab-btn').forEach(function(b) { b.classList.remove('active'); });
+  document.querySelectorAll('.tab-panel').forEach(function(p) { p.classList.remove('active'); });
+  document.querySelector('[data-tab=' + name + ']').classList.add('active');
+  $('tab-' + name).classList.add('active');
+  if (name === 'settings') loadSettings();
+  if (name === 'files') loadFiles();
+}
+
+// ===== Settings =====
+var CFG_SHA = null, THEME_CFG_SHA = null;
+var CFG_RAW = '', THEME_CFG_RAW = '';
+
+function yamlGet(raw, key) {
+  var re = new RegExp('^' + key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ':\\s*(.*)', 'm');
+  var m = raw.match(re);
+  return m ? m[1].trim() : '';
+}
+
+function yamlSet(raw, key, value) {
+  var escaped = key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  var re = new RegExp('^' + escaped + ':\\s*.*', 'm');
+  if (raw.match(re)) {
+    return raw.replace(re, key + ': ' + value);
+  } else {
+    return raw + '\n' + key + ': ' + value;
+  }
+}
+
+function yamlSetQuoted(raw, key, value) {
+  var escaped = key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  var re = new RegExp('^' + escaped + ':\\s*.*', 'm');
+  if (raw.match(re)) {
+    return raw.replace(re, key + ': ' + value);
+  } else {
+    return raw + '\n' + key + ': ' + value;
+  }
+}
+
+function loadSettings() {
+  setSettingsStatus('加载中...');
+  Promise.all([
+    api('/repos/' + REPO + '/contents/_config.yml'),
+    api('/repos/' + REPO + '/contents/themes/minimal/_config.yml')
+  ]).then(function(results) {
+    var cfg = results[0], theme = results[1];
+    CFG_SHA = cfg.sha; CFG_RAW = atob(cfg.content);
+    THEME_CFG_SHA = theme.sha; THEME_CFG_RAW = atob(theme.content);
+
+    $('cfg-title').value = yamlGet(CFG_RAW, 'title');
+    $('cfg-subtitle').value = yamlGet(CFG_RAW, 'subtitle');
+    $('cfg-desc').value = yamlGet(CFG_RAW, 'description');
+    $('cfg-author').value = yamlGet(CFG_RAW, 'author');
+    $('cfg-lang').value = yamlGet(CFG_RAW, 'language');
+    $('cfg-per-page').value = yamlGet(CFG_RAW, 'per_page') || '10';
+
+    // Parse menu from theme config
+    var menuRaw = THEME_CFG_RAW;
+    var menus = menuRaw.match(/menu:\n([\s\S]*?)(?=\n\w|$)/);
+    if (menus) {
+      var lines = menus[1].split('\n');
+      var mi = 0;
+      lines.forEach(function(line) {
+        var km = line.match(/^\s+(.+?):\s*(.+)/);
+        if (km && mi < 2) {
+          mi++;
+          $('cfg-menu' + mi + '-name').value = km[1].trim();
+          $('cfg-menu' + mi + '-url').value = km[2].trim();
+        }
+      });
+    }
+
+    $('cfg-bg-image').value = yamlGet(THEME_CFG_RAW, 'bg_image') || '';
+    updateBgPreview();
+    $('cfg-dark-mode').value = yamlGet(THEME_CFG_RAW, 'dark_mode') || 'true';
+    $('cfg-social-github').value = yamlGet(THEME_CFG_RAW, 'github') || '';
+
+    setSettingsStatus('已加载');
+  }).catch(function(err) {
+    setSettingsStatus('加载失败: ' + err.message);
+  });
+}
+
+function updateBgPreview() {
+  var url = $('cfg-bg-image').value.trim();
+  var preview = $('cfg-bg-preview');
+  if (url) {
+    preview.style.backgroundImage = 'url(' + url + ')';
+  } else {
+    preview.style.backgroundImage = 'none';
+  }
+}
+
+function setSettingsStatus(msg) { var el = $('settings-status'); if (el) el.textContent = msg; }
+
+function saveSettings() {
+  setSettingsStatus('保存中...');
+
+  var cfg = CFG_RAW;
+  cfg = yamlSet(cfg, 'title', $('cfg-title').value.trim() || 'My Blog');
+  cfg = yamlSet(cfg, 'subtitle', $('cfg-subtitle').value.trim() || "''");
+  cfg = yamlSet(cfg, 'description', $('cfg-desc').value.trim() || "''");
+  cfg = yamlSet(cfg, 'author', $('cfg-author').value.trim() || '');
+  cfg = yamlSet(cfg, 'language', $('cfg-lang').value.trim() || 'zh-CN');
+  // per_page is nested under index_generator
+  cfg = cfg.replace(/^(\s{2}per_page:\s*).*/m, '  per_page: ' + ($('cfg-per-page').value || '10'));
+  if (!cfg.match(/^\s{2}per_page:/m)) {
+    cfg = cfg.replace(/(index_generator:\n)/, '$1  per_page: ' + ($('cfg-per-page').value || '10') + '\n');
+  }
+
+  var theme = THEME_CFG_RAW;
+  // Update menu section
+  var m1n = $('cfg-menu1-name').value.trim() || 'Home';
+  var m1u = $('cfg-menu1-url').value.trim() || '/';
+  var m2n = $('cfg-menu2-name').value.trim() || 'Archives';
+  var m2u = $('cfg-menu2-url').value.trim() || '/archives';
+  theme = theme.replace(/menu:\n([\s\S]*?)(?=\n\w|$)/, function(match) {
+    return 'menu:\n  ' + m1n + ': ' + m1u + '\n  ' + m2n + ': ' + m2u;
+  });
+
+  theme = yamlSet(theme, 'bg_image', $('cfg-bg-image').value.trim() || "''");
+  theme = yamlSet(theme, 'dark_mode', $('cfg-dark-mode').value);
+  theme = yamlSet(theme, 'github', $('cfg-social-github').value.trim() || "''");
+
+  var cfgPayload = { message: 'Update site config', content: btoa(unescape(encodeURIComponent(cfg))), sha: CFG_SHA, branch: 'main' };
+  var themePayload = { message: 'Update theme config', content: btoa(unescape(encodeURIComponent(theme))), sha: THEME_CFG_SHA, branch: 'main' };
+
+  Promise.all([
+    api('/repos/' + REPO + '/contents/_config.yml', { method: 'PUT', body: cfgPayload }),
+    api('/repos/' + REPO + '/contents/themes/minimal/_config.yml', { method: 'PUT', body: themePayload })
+  ]).then(function() {
+    setSettingsStatus('已保存，正在部署...');
+    return triggerDeploy().then(function() {
+      setSettingsStatus('已部署！');
+    }).catch(function() {
+      setSettingsStatus('已保存（部署触发失败）');
+    });
+    return loadSettings();
+  }).catch(function(err) {
+    setSettingsStatus('保存失败: ' + err.message);
+  });
+}
+
+// ===== File Upload =====
+function loadFiles() {
+  api('/repos/' + REPO + '/contents/source/assets').then(function(files) {
+    var list = $('file-list');
+    list.innerHTML = '';
+    (files || []).forEach(function(f) {
+      var li = document.createElement('li');
+      var isImg = /\.(png|jpg|jpeg|gif|svg|webp|ico)$/i.test(f.name);
+      if (isImg) {
+        var img = document.createElement('img');
+        img.src = f.download_url;
+        li.appendChild(img);
+      } else {
+        var icon = document.createElement('span');
+        icon.textContent = '📄';
+        icon.style.fontSize = '1.5rem';
+        li.appendChild(icon);
+      }
+      var nameSpan = document.createElement('span');
+      nameSpan.className = 'fname';
+      nameSpan.textContent = f.name;
+      li.appendChild(nameSpan);
+
+      var copyBtn = document.createElement('button');
+      copyBtn.className = 'btn btn-sm';
+      copyBtn.textContent = '复制URL';
+      copyBtn.onclick = function() {
+        var url = f.download_url;
+        navigator.clipboard.writeText(url).then(function() {
+          setStatus('已复制: ' + url);
+        }).catch(function() {
+          setStatus(url);
+        });
+      };
+      li.appendChild(copyBtn);
+
+      var delBtn = document.createElement('button');
+      delBtn.className = 'btn btn-sm btn-danger';
+      delBtn.textContent = '删除';
+      delBtn.onclick = function() {
+        if (!confirm('删除 ' + f.name + ' ?')) return;
+        api('/repos/' + REPO + '/contents/' + f.path, {
+          method: 'DELETE',
+          body: { message: 'Delete ' + f.name, sha: f.sha, branch: 'main' }
+        }).then(function() {
+          loadFiles();
+          setStatus('已删除: ' + f.name);
+        });
+      };
+      li.appendChild(delBtn);
+      list.appendChild(li);
+    });
+    if (!files || files.length === 0) {
+      list.innerHTML = '<li style="color:var(--muted)">暂无文件</li>';
+    }
+  }).catch(function() {
+    // assets folder may not exist yet
+    $('file-list').innerHTML = '<li style="color:var(--muted)">暂无文件</li>';
+  });
+}
+
+function uploadFile(file) {
+  var reader = new FileReader();
+  var progress = $('upload-progress');
+  progress.textContent = '上传中: ' + file.name + '...';
+  reader.onload = function(e) {
+    var base64 = e.target.result.split(',')[1];
+    var path = '/repos/' + REPO + '/contents/source/assets/' + file.name;
+    // Check if file exists to get SHA
+    api(path).then(function(existing) {
+      return api(path, { method: 'PUT', body: { message: 'Upload ' + file.name, content: base64, sha: existing.sha, branch: 'main' } });
+    }).catch(function() {
+      return api(path, { method: 'PUT', body: { message: 'Upload ' + file.name, content: base64, branch: 'main' } });
+    }).then(function() {
+      progress.textContent = '已上传: ' + file.name;
+      loadFiles();
+      triggerDeploy().catch(function() {});
+    }).catch(function(err) {
+      progress.textContent = '上传失败: ' + err.message;
+    });
+  };
+  reader.readAsDataURL(file);
+}
+
 // ===== Event Binding =====
 $('login-btn').addEventListener('click', doLogin);
 $('token-input').addEventListener('keydown', function(e) { if (e.key === 'Enter') doLogin(); });
@@ -495,6 +869,43 @@ $('logout-btn').addEventListener('click', function() {
 $('content-input').addEventListener('input', function() {
   $('preview').innerHTML = renderMd(this.value);
 });
+
+// Tab events
+document.querySelectorAll('.tab-btn').forEach(function(btn) {
+  btn.addEventListener('click', function() { switchTab(this.dataset.tab); });
+});
+
+// Settings events
+$('save-settings-btn').addEventListener('click', saveSettings);
+$('cfg-bg-image').addEventListener('input', updateBgPreview);
+
+// File events
+$('drop-zone').addEventListener('click', function() { $('file-input').click(); });
+$('file-input').addEventListener('change', function() {
+  var files = this.files;
+  for (var i = 0; i < files.length; i++) uploadFile(files[i]);
+  this.value = '';
+});
+$('refresh-files-btn').addEventListener('click', function() { loadFiles().then(function() { setStatus('已刷新'); }); });
+
+// Drag and drop
+var dz = $('drop-zone');
+dz.addEventListener('dragover', function(e) { e.preventDefault(); dz.classList.add('drag-over'); });
+dz.addEventListener('dragleave', function() { dz.classList.remove('drag-over'); });
+dz.addEventListener('drop', function(e) {
+  e.preventDefault();
+  dz.classList.remove('drag-over');
+  var files = e.dataTransfer.files;
+  for (var i = 0; i < files.length; i++) uploadFile(files[i]);
+});
+
+// Preview toggle
+var previewDetails = document.querySelector('#tab-posts details');
+if (previewDetails) {
+  previewDetails.addEventListener('toggle', function() {
+    $('preview').style.display = this.open ? '' : 'none';
+  });
+}
 
 // Auto-restore session
 var savedToken = localStorage.getItem('blog_admin_token');
