@@ -576,7 +576,7 @@ function doSave() {
       setStatus('已保存，稍后访问博客查看');
       loadPosts();
     }).catch(function(err) {
-      if (retry < 2 && err.message && err.message.indexOf('sha') > -1 && CURRENT_FILE) {
+      if (retry < 2 && err.message && (err.message.indexOf('does not match') > -1 || err.message.indexOf('sha') > -1) && CURRENT_FILE) {
         // SHA stale: re-read the post and retry
         setStatus('文件已变更，重试中...');
         api('/repos/' + REPO + '/contents/source/_posts/' + CURRENT_FILE).then(function(data) {
@@ -783,9 +783,9 @@ function doSaveSettings(cfgRaw, cfgSha, themeRaw, themeSha, retryCount) {
     THEME_CFG_RAW = theme;
     setSettingsStatus('已保存，GitHub Actions 将自动部署');
   }).catch(function(err) {
-    if (retryCount < 2 && err.message && err.message.indexOf('sha') > -1) {
-      // SHA mismatch: re-read files and retry with fresh SHAs
-      setSettingsStatus('文件已变更，重新读取后重试...');
+    var msg = err.message || '';
+    if (retryCount < 2 && (msg.indexOf('does not match') > -1 || msg.indexOf('sha') > -1 || msg.indexOf('SHA') > -1)) {
+      setSettingsStatus('文件已被其他操作更新，重新读取后重试...');
       Promise.all([
         api('/repos/' + REPO + '/contents/_config.yml'),
         api('/repos/' + REPO + '/contents/themes/minimal/_config.yml')
@@ -798,7 +798,6 @@ function doSaveSettings(cfgRaw, cfgSha, themeRaw, themeSha, retryCount) {
       });
     } else {
       setSettingsStatus('保存失败: ' + err.message);
-      console.error('saveSettings failed:', err);
     }
   });
 }
