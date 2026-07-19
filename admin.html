@@ -314,8 +314,11 @@ function triggerDeploy() {
 }
 
 // ===== Markdown Preview =====
+function safeUrl(u) {
+  return /^(https?:|\/|#|\.)/i.test(u) && !/^[\s\x00]*javascript:/i.test(u) && !/^[\s\x00]*data:/i.test(u) ? u : '#';
+}
 function renderMd(md) {
-  var h = md.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  var h = md.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   // Code blocks (fenced)
   h = h.replace(/```(\w*)\n([\s\S]*?)```/g, function(_, lang, code) {
     return '<pre><code>' + code.replace(/\n$/, '') + '</code></pre>';
@@ -331,10 +334,14 @@ function renderMd(md) {
   h = h.replace(/\*\*\*(.+?)\*\*\*/g, '<strong><em>$1</em></strong>');
   h = h.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
   h = h.replace(/\*(.+?)\*/g, '<em>$1</em>');
+  // Images (before links — both match [...](...))
+  h = h.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, function(_, alt, url) {
+    return '<img src="' + safeUrl(url) + '" alt="' + alt + '">';
+  });
   // Links
-  h = h.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>');
-  // Images
-  h = h.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1">');
+  h = h.replace(/\[([^\]]+)\]\(([^)]+)\)/g, function(_, text, url) {
+    return '<a href="' + safeUrl(url) + '">' + text + '</a>';
+  });
   // Blockquotes
   h = h.replace(/^&gt; (.+)/gm, '<blockquote>$1</blockquote>');
   // HR
