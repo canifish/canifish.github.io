@@ -1,0 +1,33 @@
+<% if (page.posts.length) { %>
+  <div class="posts">
+    <% page.posts.forEach(function(post) { %>
+      <article class="post-item">
+        <h2 class="post-title">
+          <% if (post.password) { %><span class="lock-icon">🔒 </span><% } %>
+          <a href="<%- url_for(post.path) %>"><%= post.title %></a>
+        </h2>
+        <time class="post-date" datetime="<%= date(post.date, 'YYYY-MM-DD') %>">
+          <%= date(post.date, theme.post.date_format || 'YYYY-MM-DD') %>
+        </time>
+        <% if (post.tags && post.tags.length) { %>
+          <div class="post-tags">
+            <% post.tags.forEach(function(tag) { %>
+              <a class="tag" href="<%- url_for(tag.path) %>"><%= tag.name %></a>
+            <% }) %>
+          </div>
+        <% } %>
+        <% if (post.excerpt) { %>
+          <div class="post-excerpt"><%- post.excerpt %></div>
+        <% } %>
+      </article>
+    <% }) %>
+  </div>
+  <% if (page.total > 1) { %>
+    <nav class="pagination">
+      <% if (page.prev) { %><a href="<%- url_for(page.prev_link) %>" class="prev">&laquo; Newer</a><% } %>
+      <% if (page.next) { %><a href="<%- url_for(page.next_link) %>" class="next">Older &raquo;</a><% } %>
+    </nav>
+  <% } %>
+<% } else { %>
+  <div class="empty">No posts yet.</div>
+<% } %>

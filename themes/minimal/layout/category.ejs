@@ -1,0 +1,16 @@
+<div class="category-page">
+  <h1>Category: <%= page.category %></h1>
+  <div class="posts">
+    <% page.posts.each(function(post) { %>
+      <article class="post-item">
+        <h2 class="post-title">
+          <% if (post.password) { %><span class="lock-icon">🔒 </span><% } %>
+          <a href="<%- url_for(post.path) %>"><%= post.title %></a>
+        </h2>
+        <time class="post-date" datetime="<%= date(post.date, 'YYYY-MM-DD') %>">
+          <%= date(post.date, theme.post.date_format || 'YYYY-MM-DD') %>
+        </time>
+      </article>
+    <% }) %>
+  </div>
+</div>

@@ -1,0 +1,26 @@
+<article class="post encrypted-post" id="encrypted-post">
+  <header class="post-header">
+    <h1 class="post-title">🔒 <%= page.title %></h1>
+    <time class="post-date" datetime="<%= date(page.date, 'YYYY-MM-DD') %>">
+      <%= date(page.date, theme.post.date_format || 'YYYY-MM-DD') %>
+    </time>
+  </header>
+
+  <div class="password-prompt" id="password-prompt">
+    <p class="password-hint">这篇文章已加密，请输入密码阅读。</p>
+    <% if (page.password_hint) { %>
+      <p class="hint-text">提示：<%= page.password_hint %></p>
+    <% } %>
+    <form id="decrypt-form" class="password-form">
+      <input type="password" id="password-input" placeholder="输入密码..." autocomplete="off" />
+      <button type="submit">解锁</button>
+    </form>
+    <p class="error-msg" id="error-msg"></p>
+  </div>
+
+  <div class="post-content" id="decrypted-content" style="display:none;"></div>
+
+  <script type="application/json" id="encrypted-data"><%- JSON.stringify(page.encrypted) %></script>
+</article>
+
+<script src="<%- url_for('/js/decrypt.js') %>"></script>

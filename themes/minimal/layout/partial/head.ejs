@@ -1,0 +1,7 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title><% if (is_home()) { %><%= config.title %><% } else if (is_post()) { %><%= page.title %> - <%= config.title %><% } else { %><%= page.title || __('title.not_found') %> - <%= config.title %><% } %></title>
+<meta name="description" content="<%= page.description || config.description %>">
+<meta name="author" content="<%= config.author %>">
+<link rel="stylesheet" href="<%- url_for('/css/style.css') %>">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📝</text></svg>">

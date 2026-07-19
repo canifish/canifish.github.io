@@ -1,0 +1,20 @@
+# Minimal Theme Configuration
+
+# Navigation menu
+menu:
+  Home: /
+  Archives: /archives
+
+# Social links (optional)
+social:
+  github: https://github.com/canifish
+
+# Footer since year
+since: 2026
+
+# Post display
+post:
+  date_format: YYYY-MM-DD
+
+# Enable dark mode
+dark_mode: true
