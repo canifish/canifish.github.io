@@ -16,7 +16,7 @@ body {
     sans-serif;
   line-height: 1.75;
   color: #333;
-  background: #fff;
+  background-color: #fff;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
@@ -26,7 +26,7 @@ body {
 @media (prefers-color-scheme: dark) {
   body {
     color: #ddd;
-    background: #1a1a2e;
+    background-color: #1a1a2e;
   }
   a { color: #7aa2f7; }
   .post-content pre,
