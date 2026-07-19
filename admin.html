@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>title.not_found - My Blog</title>
+<meta name="description" content="">
+<meta name="author" content="canifish">
+<link rel="stylesheet" href="/css/style.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📝</text></svg>">
+
+<meta name="generator" content="Hexo 8.1.2"></head>
+<body>
+  <header class="header">
+  <div class="container">
+    <a href="/" class="site-title">My Blog</a>
+    <nav class="nav">
+      
+        <a href="/">Home</a>
+      
+        <a href="/archives">Archives</a>
+      
+    </nav>
+  </div>
+</header>
+
+  <main class="main">
+    <div class="container">
+      <article class="page">
+  <h1 class="page-title"></h1>
+  <div class="page-content">
+    <!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Blog Admin</title>
+<style>
+:root {
+  --bg: #fff; --text: #333; --border: #e5e7eb; --surface: #f9fafb;
+  --primary: #2563eb; --primary-hover: #1d4ed8; --danger: #dc2626;
+  --muted: #999; --code-bg: #f5f5f5;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #1a1a2e; --text: #ddd; --border: #2a2a4a; --surface: #16213e;
+    --primary: #7aa2f7; --primary-hover: #96b4fa; --muted: #888; --code-bg: #0f0f23;
+  }
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;color:var(--text);background:var(--bg);min-height:100vh;line-height:1.6}
+a{color:var(--primary);text-decoration:none}a:hover{text-decoration:underline}
+
+/* === Login === */
+.login-overlay{position:fixed;inset:0;background:var(--bg);z-index:100;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:16px}
+.login-overlay h1{font-size:1.6rem}
+.login-overlay p{color:var(--muted);font-size:.9rem;text-align:center;max-width:400px}
+.login-overlay input{padding:10px 16px;font-size:1rem;border:1px solid var(--border);border-radius:6px;width:320px;max-width:90vw;background:var(--bg);color:var(--text)}
+.login-overlay button{padding:10px 28px;font-size:1rem;color:#fff;background:var(--primary);border:none;border-radius:6px;cursor:pointer}
+.login-overlay button:hover{background:var(--primary-hover)}
+.login-overlay .err{color:var(--danger);font-size:.85rem;min-height:1.2em}
+
+/* === Layout === */
+.app{display:none;max-width:1200px;margin:0 auto;padding:0 16px}
+.app.active{display:block}
+.topbar{display:flex;justify-content:space-between;align-items:center;padding:16px 0;border-bottom:1px solid var(--border);margin-bottom:20px;gap:12px;flex-wrap:wrap}
+.topbar h1{font-size:1.3rem}
+.topbar .actions{display:flex;gap:8px;align-items:center}
+.btn{padding:7px 16px;font-size:.9rem;border-radius:6px;border:1px solid var(--border);cursor:pointer;background:var(--bg);color:var(--text)}
+.btn:hover{background:var(--surface)}
+.btn-primary{background:var(--primary);color:#fff;border-color:var(--primary)}
+.btn-primary:hover{background:var(--primary-hover)}
+.btn-danger{color:var(--danger);border-color:var(--danger)}
+.btn-danger:hover{background:#fef2f2}
+@media (prefers-color-scheme: dark){.btn-danger:hover{background:#2a1111}}
+.btn-sm{padding:4px 10px;font-size:.8rem}
+.status{font-size:.85rem;color:var(--muted)}
+
+/* === Post List === */
+.posts-sidebar{width:260px;flex-shrink:0}
+.posts-sidebar h3{font-size:.9rem;color:var(--muted);margin-bottom:8px;text-transform:uppercase}
+.post-list{list-style:none;max-height:calc(100vh - 200px);overflow-y:auto}
+.post-list li{padding:8px 10px;border-radius:4px;cursor:pointer;font-size:.9rem;display:flex;justify-content:space-between;align-items:center}
+.post-list li:hover{background:var(--surface)}
+.post-list li.selected{background:var(--primary);color:#fff}
+.post-list li.selected .del-btn{color:#fff}
+.post-list .del-btn{background:none;border:none;color:var(--muted);cursor:pointer;font-size:1rem;padding:0 4px;opacity:0;transition:opacity .15s}
+.post-list li:hover .del-btn{opacity:1}
+.post-list .del-btn:hover{color:var(--danger)}
+
+/* === Editor === */
+.main-area{flex:1;min-width:0}
+.editor-layout{display:flex;gap:20px}
+.form-group{margin-bottom:14px}
+.form-group label{display:block;font-size:.85rem;color:var(--muted);margin-bottom:4px}
+.form-group input,.form-group textarea{width:100%;padding:8px 12px;font-size:.9rem;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text);font-family:inherit}
+.form-group textarea{resize:vertical;min-height:300px;font-family:"SF Mono","Fira Code","Courier New",monospace;font-size:.85rem;line-height:1.6}
+.form-row{display:flex;gap:12px}
+.form-row .form-group{flex:1}
+.form-row .form-group.small{flex:0 0 120px}
+.preview-pane{flex:1;min-width:0;min-height:300px;padding:16px;border:1px solid var(--border);border-radius:6px;background:var(--surface);overflow-y:auto;font-size:.95rem;line-height:1.85}
+.preview-pane h1{font-size:1.5rem}
+.preview-pane h2{font-size:1.3rem;margin:1.2em 0 .4em}
+.preview-pane h3{font-size:1.1rem;margin:1em 0 .3em}
+.preview-pane p{margin:.8em 0}
+.preview-pane code{background:var(--code-bg);padding:2px 6px;border-radius:3px;font-size:.88em}
+.preview-pane pre{background:var(--code-bg);padding:12px 16px;border-radius:6px;overflow-x:auto;font-size:.85rem;line-height:1.5}
+.preview-pane blockquote{border-left:3px solid var(--primary);padding:4px 12px;margin:.8em 0;color:var(--muted)}
+.preview-pane ul,.preview-pane ol{padding-left:1.5em;margin:.6em 0}
+.preview-pane img{max-width:100%;border-radius:4px}
+.preview-pane table{border-collapse:collapse;width:100%}
+.preview-pane td,.preview-pane th{border:1px solid var(--border);padding:6px 10px}
+
+/* === Responsive === */
+@media (max-width: 768px) {
+  .editor-layout{flex-direction:column}
+  .posts-sidebar{width:100%}
+  .post-list{max-height:200px}
+  .form-row{flex-direction:column}
+  .form-row .form-group.small{flex:1}
+}
+.article-link{font-size:.8rem;color:var(--muted)}
+</style>
+</head>
+<body>
+
+<!-- ===== Login ===== -->
+<div class="login-overlay" id="login-screen">
+  <h1>Blog Admin</h1>
+  <p>需要 GitHub Personal Access Token 来管理文章。<br>在 <a href="https://github.com/settings/tokens" target="_blank">GitHub Settings → Tokens</a> 创建一个，勾选 <b>repo</b> 权限。</p>
+  <input type="password" id="token-input" placeholder="ghp_xxxxxxxxxxxx" autocomplete="off">
+  <button id="login-btn">登录</button>
+  <div class="err" id="login-err"></div>
+</div>
+
+<!-- ===== App ===== -->
+<div class="app" id="app">
+  <div class="topbar">
+    <h1><a href="/" target="_blank">Blog Admin</a></h1>
+    <span class="article-link">文章来源: GitHub API (canifish/canifish.github.io)</span>
+    <div class="actions">
+      <span class="status" id="status"></span>
+      <button class="btn" id="new-post-btn">+ 新文章</button>
+      <button class="btn btn-primary" id="save-btn">保存并发布</button>
+      <button class="btn btn-sm" id="logout-btn">退出</button>
+    </div>
+  </div>
+
+  <div class="editor-layout">
+    <aside class="posts-sidebar">
+      <h3>文章列表</h3>
+      <div style="margin-bottom:8px">
+        <button class="btn btn-sm" id="refresh-btn">刷新</button>
+      </div>
+      <ul class="post-list" id="post-list"></ul>
+    </aside>
+
+    <div class="main-area">
+      <form id="editor-form">
+        <div class="form-row">
+          <div class="form-group" style="flex:1">
+            <label>标题</label>
+            <input type="text" id="title-input" placeholder="文章标题">
+          </div>
+          <div class="form-group small">
+            <label>日期</label>
+            <input type="date" id="date-input">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>标签（逗号分隔）</label>
+            <input type="text" id="tags-input" placeholder="tech, life">
+          </div>
+          <div class="form-group">
+            <label>分类</label>
+            <input type="text" id="cat-input" placeholder="技术">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>密码（留空=公开文章）</label>
+            <input type="text" id="pw-input" placeholder="设置密码即可加密文章" autocomplete="off">
+          </div>
+          <div class="form-group">
+            <label>密码提示</label>
+            <input type="text" id="pw-hint-input" placeholder="可选，显示给读者">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>内容（Markdown）</label>
+          <textarea id="content-input" placeholder="## 开始写作...&#10;&#10;支持 Markdown 语法。"></textarea>
+        </div>
+      </form>
+      <details style="margin-bottom:12px">
+        <summary style="cursor:pointer;color:var(--primary);font-size:.9rem">预览</summary>
+        <div class="preview-pane" id="preview"></div>
+      </details>
+    </div>
+  </div>
+</div>
+
+<script>
+// ===== GitHub API =====
+var REPO = 'canifish/canifish.github.io';
+var TOKEN = '';
+var CURRENT_SHA = null;
+var CURRENT_FILE = null;
+var POSTS = [];
+
+function api(path, opts) {
+  opts = opts || {};
+  var headers = { Authorization: 'Bearer ' + TOKEN, Accept: 'application/vnd.github+json' };
+  if (opts.body) { headers['Content-Type'] = 'application/json'; }
+  return fetch('https://api.github.com' + path, { method: opts.method || 'GET', headers: headers, body: opts.body ? JSON.stringify(opts.body) : undefined })
+    .then(function(r) { if (!r.ok) { return r.json().then(function(e) { throw new Error(e.message || 'API error ' + r.status); }); } return r.status === 204 ? null : r.json(); });
+}
+
+function loadPosts() {
+  return api('/repos/' + REPO + '/contents/source/_posts').then(function(files) {
+    POSTS = (files || []).filter(function(f) { return f.name.endsWith('.md'); });
+    renderPostList();
+  });
+}
+
+function readPost(file) {
+  return api('/repos/' + REPO + '/contents/source/_posts/' + file.name).then(function(data) {
+    return { sha: data.sha, content: atob(data.content), path: data.path };
+  });
+}
+
+function parseFrontmatter(raw) {
+  var m = raw.match(/^---\s*\n([\s\S]*?)\n---\s*\n([\s\S]*)/);
+  if (!m) return { meta: {}, body: raw };
+  var meta = {};
+  m[1].split('\n').forEach(function(line) {
+    var kv = line.match(/^(\w[\w_-]*):\s*(.*)/);
+    if (kv) {
+      var val = kv[2].trim();
+      if (val.startsWith('[') && val.endsWith(']')) {
+        val = val.slice(1,-1).split(',').map(function(s) { return s.trim(); }).filter(Boolean);
+      }
+      meta[kv[1]] = val;
+    }
+  });
+  return { meta: meta, body: m[2] };
+}
+
+function buildFrontmatter(meta) {
+  var lines = ['---'];
+  Object.keys(meta).forEach(function(k) {
+    var v = meta[k];
+    if (Array.isArray(v)) v = '[' + v.join(', ') + ']';
+    lines.push(k + ': ' + v);
+  });
+  lines.push('---');
+  return lines.join('\n');
+}
+
+// ===== Encryption =====
+function encryptContent(password, plaintext) {
+  return new Promise(function(resolve, reject) {
+    var salt = crypto.getRandomValues(new Uint8Array(16));
+    var iv = crypto.getRandomValues(new Uint8Array(12));
+    var enc = new TextEncoder();
+    crypto.subtle.importKey('raw', enc.encode(password), 'PBKDF2', false, ['deriveKey']).then(function(keyMaterial) {
+      return crypto.subtle.deriveKey(
+        { name: 'PBKDF2', salt: salt, iterations: 100000, hash: 'SHA-256' },
+        keyMaterial, { name: 'AES-GCM', length: 256 }, false, ['encrypt']
+      );
+    }).then(function(key) {
+      return crypto.subtle.encrypt({ name: 'AES-GCM', iv: iv }, key, enc.encode(plaintext));
+    }).then(function(encrypted) {
+      var ct = new Uint8Array(encrypted.slice(0, -16));
+      var tag = new Uint8Array(encrypted.slice(-16));
+      resolve({
+        ciphertext: btoa(String.fromCharCode.apply(null, ct)),
+        salt: btoa(String.fromCharCode.apply(null, salt)),
+        iv: btoa(String.fromCharCode.apply(null, iv)),
+        authTag: btoa(String.fromCharCode.apply(null, tag))
+      });
+    }).catch(reject);
+  });
+}
+
+// ===== Save =====
+function savePost(meta, body, sha) {
+  var frontmatter = buildFrontmatter(meta);
+  var raw = body ? frontmatter + '\n' + body : frontmatter + '\n';
+  var content = btoa(unescape(encodeURIComponent(raw)));
+  var fileName = (meta.slug || meta.title.replace(/[\/\\:*?"<>|]/g, '').replace(/\s+/g, '-').toLowerCase()) + '.md';
+  if (!fileName.endsWith('.md')) fileName += '.md';
+
+  var payload = {
+    message: sha ? 'Update: ' + meta.title : 'New post: ' + meta.title,
+    content: content,
+    branch: 'main'
+  };
+  if (sha) payload.sha = sha;
+
+  var path = '/repos/' + REPO + '/contents/source/_posts/' + fileName;
+  return api(path, { method: 'PUT', body: payload }).then(function(result) {
+    CURRENT_SHA = result.content.sha;
+    CURRENT_FILE = fileName;
+    return result;
+  });
+}
+
+function triggerDeploy() {
+  return api('/repos/' + REPO + '/actions/workflows/316023135/dispatches', {
+    method: 'POST',
+    body: { ref: 'main' }
+  });
+}
+
+// ===== Markdown Preview =====
+function renderMd(md) {
+  var h = md.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  // Code blocks (fenced)
+  h = h.replace(/```(\w*)\n([\s\S]*?)```/g, function(_, lang, code) {
+    return '<pre><code>' + code.replace(/\n$/, '') + '</code></pre>';
+  });
+  // Inline code
+  h = h.replace(/`([^`]+)`/g, '<code>$1</code>');
+  // Headers
+  h = h.replace(/^#### (.+)/gm, '<h4>$1</h4>');
+  h = h.replace(/^### (.+)/gm, '<h3>$1</h3>');
+  h = h.replace(/^## (.+)/gm, '<h2>$1</h2>');
+  h = h.replace(/^# (.+)/gm, '<h1>$1</h1>');
+  // Bold/Italic
+  h = h.replace(/\*\*\*(.+?)\*\*\*/g, '<strong><em>$1</em></strong>');
+  h = h.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  h = h.replace(/\*(.+?)\*/g, '<em>$1</em>');
+  // Links
+  h = h.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>');
+  // Images
+  h = h.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1">');
+  // Blockquotes
+  h = h.replace(/^&gt; (.+)/gm, '<blockquote>$1</blockquote>');
+  // HR
+  h = h.replace(/^---+/gm, '<hr>');
+  // Unordered lists
+  h = h.replace(/^[\-\*] (.+)/gm, '<li>$1</li>');
+  h = h.replace(/(<li>.*<\/li>\n?)+/g, '<ul>$&</ul>');
+  // Ordered lists
+  h = h.replace(/^\d+\. (.+)/gm, '<li>$1</li>');
+  // Paragraphs (double newline)
+  var paras = h.split(/\n\n+/);
+  h = paras.map(function(p) {
+    p = p.trim();
+    if (!p) return '';
+    if (p.startsWith('<h') || p.startsWith('<pre') || p.startsWith('<ul') || p.startsWith('<blockquote') || p.startsWith('<hr')) return p;
+    return '<p>' + p.replace(/\n/g, '<br>') + '</p>';
+  }).join('\n');
+  return h;
+}
+
+// ===== UI =====
+var $ = function(id) { return document.getElementById(id); };
+
+function renderPostList() {
+  var ul = $('post-list');
+  ul.innerHTML = '';
+  POSTS.forEach(function(f) {
+    var li = document.createElement('li');
+    var name = f.name.replace('.md', '');
+    li.textContent = name;
+    if (CURRENT_FILE === f.name) li.classList.add('selected');
+    var del = document.createElement('button');
+    del.className = 'del-btn';
+    del.textContent = '×';
+    del.title = '删除';
+    del.onclick = function(e) { e.stopPropagation(); deletePost(f); };
+    li.appendChild(del);
+    li.onclick = function() { editPost(f); };
+    ul.appendChild(li);
+  });
+}
+
+function editPost(file) {
+  setStatus('加载中...');
+  readPost(file).then(function(data) {
+    var parsed = parseFrontmatter(data.content);
+    CURRENT_SHA = data.sha;
+    CURRENT_FILE = file.name;
+    $('title-input').value = parsed.meta.title || '';
+    $('date-input').value = parsed.meta.date ? parsed.meta.date.slice(0,10) : '';
+    $('tags-input').value = Array.isArray(parsed.meta.tags) ? parsed.meta.tags.join(', ') : (parsed.meta.tags || '');
+    $('cat-input').value = Array.isArray(parsed.meta.categories) ? parsed.meta.categories[0] : (parsed.meta.categories || '');
+    $('pw-input').value = '';
+    $('pw-hint-input').value = parsed.meta.password_hint || '';
+    $('content-input').value = parsed.meta.encrypted ? '(加密文章，内容不可编辑。如需修改，请删除后重新创建。)' : parsed.body.trim();
+    if (parsed.meta.encrypted) {
+      $('pw-input').value = '(已加密)';
+      $('pw-input').disabled = true;
+    } else {
+      $('pw-input').disabled = false;
+    }
+    renderPostList();
+    setStatus('已加载: ' + parsed.meta.title);
+  }).catch(function(err) {
+    setStatus('加载失败: ' + err.message);
+  });
+}
+
+function deletePost(file) {
+  if (!confirm('确定删除「' + file.name.replace('.md','') + '」？此操作不可撤销。')) return;
+  setStatus('删除中...');
+  readPost(file).then(function(data) {
+    return api('/repos/' + REPO + '/contents/' + data.path, {
+      method: 'DELETE',
+      body: { message: 'Delete: ' + file.name, sha: data.sha, branch: 'main' }
+    });
+  }).then(function() {
+    CURRENT_FILE = null; CURRENT_SHA = null; clearForm();
+    return loadPosts();
+  }).then(function() {
+    setStatus('已删除');
+  }).catch(function(err) {
+    setStatus('删除失败: ' + err.message);
+  });
+}
+
+function newPost() {
+  CURRENT_FILE = null;
+  CURRENT_SHA = null;
+  clearForm();
+  $('date-input').value = new Date().toISOString().slice(0,10);
+  $('pw-input').disabled = false;
+  renderPostList();
+  $('title-input').focus();
+  setStatus('新建文章');
+}
+
+function clearForm() {
+  ['title-input','date-input','tags-input','cat-input','pw-input','pw-hint-input','content-input'].forEach(function(id) {
+    $(id).value = '';
+  });
+  $('pw-input').disabled = false;
+}
+
+function setStatus(msg) { $('status').textContent = msg; }
+
+function doSave() {
+  var title = $('title-input').value.trim();
+  if (!title) { setStatus('请输入标题'); return; }
+  var password = $('pw-input').value.trim();
+  if (password === '(已加密)') password = '';
+
+  var meta = {
+    title: title,
+    date: $('date-input').value || new Date().toISOString().slice(0,10)
+  };
+  var tags = $('tags-input').value.trim();
+  if (tags) meta.tags = tags.split(',').map(function(s) { return s.trim(); });
+  var cat = $('cat-input').value.trim();
+  if (cat) meta.categories = [cat];
+  if (password) meta.password_hint = $('pw-hint-input').value.trim() || '';
+
+  var body = $('content-input').value.trim();
+  setStatus('保存中...');
+
+  var save = function(finalBody) {
+    savePost(meta, finalBody, CURRENT_SHA).then(function() {
+      setStatus('已保存，正在部署...');
+      return triggerDeploy().then(function() {
+        setStatus('已发布！稍后访问博客查看');
+      }).catch(function() {
+        setStatus('已保存（部署触发失败，请手动触发 Actions）');
+      });
+      loadPosts();
+    }).catch(function(err) {
+      setStatus('保存失败: ' + err.message);
+    });
+  };
+
+  if (password) {
+    encryptContent(password, body).then(function(enc) {
+      meta.encrypted = true;
+      var encBody = '```json\n' + JSON.stringify(enc) + '\n```\n';
+      save(encBody);
+    }).catch(function(err) {
+      setStatus('加密失败: ' + err.message);
+    });
+  } else {
+    save(body);
+  }
+}
+
+function doLogin() {
+  var token = $('token-input').value.trim();
+  if (!token) { $('login-err').textContent = '请输入 Token'; return; }
+  TOKEN = token;
+  api('/user').then(function(user) {
+    localStorage.setItem('blog_admin_token', token);
+    $('login-screen').style.display = 'none';
+    $('app').classList.add('active');
+    loadPosts().then(function() { setStatus('已登录: ' + user.login); });
+  }).catch(function(err) {
+    $('login-err').textContent = '登录失败: ' + err.message;
+  });
+}
+
+// ===== Event Binding =====
+$('login-btn').addEventListener('click', doLogin);
+$('token-input').addEventListener('keydown', function(e) { if (e.key === 'Enter') doLogin(); });
+$('new-post-btn').addEventListener('click', newPost);
+$('save-btn').addEventListener('click', doSave);
+$('refresh-btn').addEventListener('click', function() { loadPosts().then(function() { setStatus('已刷新'); }); });
+$('logout-btn').addEventListener('click', function() {
+  localStorage.removeItem('blog_admin_token');
+  location.reload();
+});
+$('content-input').addEventListener('input', function() {
+  $('preview').innerHTML = renderMd(this.value);
+});
+
+// Auto-restore session
+var savedToken = localStorage.getItem('blog_admin_token');
+if (savedToken) {
+  $('token-input').value = savedToken;
+  TOKEN = savedToken;
+  api('/user').then(function(user) {
+    $('login-screen').style.display = 'none';
+    $('app').classList.add('active');
+    loadPosts().then(function() { setStatus('已登录: ' + user.login); });
+  }).catch(function() {
+    localStorage.removeItem('blog_admin_token');
+  });
+}
+</script>
+</body>
+</html>
+
+  </div>
+</article>
+
+    </div>
+  </main>
+  <footer class="footer">
+  <div class="container">
+    <p>&copy; 2026 canifish. Powered by <a href="https://hexo.io" target="_blank">Hexo</a>. <a href="/admin.html">Manage</a></p>
+  </div>
+</footer>
+
+</body>
+</html>
