@@ -451,13 +451,6 @@ function savePost(meta, body, sha) {
   });
 }
 
-function triggerDeploy() {
-  return api('/repos/' + REPO + '/actions/workflows/316023135/dispatches', {
-    method: 'POST',
-    body: { ref: 'main' }
-  });
-}
-
 // ===== Markdown Preview =====
 function safeUrl(u) {
   return /^(https?:|\/|#|\.)/i.test(u) && !/^[\s\x00]*javascript:/i.test(u) && !/^[\s\x00]*data:/i.test(u) ? u : '#';
@@ -615,11 +608,7 @@ function doSave() {
   var save = function(finalBody) {
     savePost(meta, finalBody, CURRENT_SHA).then(function() {
       setStatus('已保存，正在部署...');
-      return triggerDeploy().then(function() {
-        setStatus('已发布！稍后访问博客查看');
-      }).catch(function() {
-        setStatus('已保存（部署触发失败，请手动触发 Actions）');
-      });
+      setStatus('已保存，稍后访问博客查看');
       loadPosts();
     }).catch(function(err) {
       setStatus('保存失败: ' + err.message);
@@ -803,12 +792,7 @@ function saveSettings() {
   ]).then(function(results) {
     CFG_SHA = results[0].content.sha;
     THEME_CFG_SHA = results[1].content.sha;
-    setSettingsStatus('已保存，正在部署...');
-    return triggerDeploy().then(function() {
-      setSettingsStatus('已部署！');
-    }).catch(function() {
-      setSettingsStatus('已保存（部署触发失败）');
-    });
+    setSettingsStatus('已保存，GitHub Actions 将自动部署');
   }).catch(function(err) {
     setSettingsStatus('保存失败: ' + err.message);
     console.error('saveSettings failed:', err);
@@ -902,7 +886,6 @@ function uploadFile(file) {
           updateBgPreview();
         }
         loadFiles();
-        triggerDeploy().catch(function() {});
       })
       .catch(function(err) {
         // If file already exists, retry with SHA
@@ -916,7 +899,6 @@ function uploadFile(file) {
               if (bgInput) { bgInput.value = res.content.download_url; updateBgPreview(); }
             }
             loadFiles();
-            triggerDeploy().catch(function() {});
           }).catch(function(e2) {
             progress.textContent = '上传失败: ' + e2.message;
           });
