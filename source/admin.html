@@ -109,19 +109,20 @@ a{color:var(--primary);text-decoration:none}a:hover{text-decoration:underline}
 .setting-field input[type=color]{padding:2px 4px;height:36px;width:60px;cursor:pointer}
 .bg-preview{width:100%;height:80px;border-radius:6px;border:1px solid var(--border);margin-top:6px;background-size:cover;background-position:center;background-color:var(--surface)}
 
-/* === Drop Zone === */
-.drop-zone{border:2px dashed var(--border);border-radius:8px;padding:40px 20px;text-align:center;transition:all .2s;cursor:pointer;margin-bottom:20px}
-.drop-zone.drag-over{border-color:var(--primary);background:rgba(37,99,235,.05)}
-.drop-zone .dz-icon{font-size:2rem;margin-bottom:8px}
-.drop-zone p{color:var(--muted);font-size:.9rem}
-.drop-zone input[type=file]{display:none}
+/* === Drop Zone (inline) === */
+.bg-upload-row{display:flex;gap:8px;align-items:stretch}
+.bg-upload-row input[type=text]{flex:1}
+.drop-zone-inline{border:2px dashed var(--border);border-radius:6px;padding:8px 16px;display:flex;align-items:center;gap:6px;cursor:pointer;transition:all .2s;font-size:.85rem;color:var(--muted);white-space:nowrap}
+.drop-zone-inline:hover,.drop-zone-inline.drag-over{border-color:var(--primary);background:rgba(37,99,235,.05);color:var(--text)}
+.drop-zone-inline input[type=file]{display:none}
+.drop-zone-inline .dz-icon-sm{font-size:1.2rem}
 .file-list{list-style:none}
-.file-list li{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:4px;font-size:.9rem}
+.file-list li{display:flex;align-items:center;gap:10px;padding:6px 8px;border-radius:4px;font-size:.85rem}
 .file-list li:hover{background:var(--surface)}
-.file-list li img{width:40px;height:40px;object-fit:cover;border-radius:4px;border:1px solid var(--border)}
+.file-list li img{width:36px;height:36px;object-fit:cover;border-radius:4px;border:1px solid var(--border)}
 .file-list li .fname{flex:1;word-break:break-all}
-.file-list li .furl{font-size:.8rem;color:var(--muted)}
-.upload-progress{margin-top:8px;font-size:.85rem;color:var(--primary)}
+.file-list li .furl{font-size:.75rem;color:var(--muted)}
+.upload-progress{margin-top:6px;font-size:.85rem;color:var(--primary)}
 </style>
 </head>
 <body>
@@ -149,7 +150,6 @@ a{color:var(--primary);text-decoration:none}a:hover{text-decoration:underline}
   <div class="tab-bar" id="tab-bar">
     <button class="tab-btn active" data-tab="posts">文章</button>
     <button class="tab-btn" data-tab="settings">设置</button>
-    <button class="tab-btn" data-tab="files">文件</button>
   </div>
 
   <!-- ===== Posts Tab ===== -->
@@ -264,12 +264,16 @@ a{color:var(--primary);text-decoration:none}a:hover{text-decoration:underline}
     <div class="settings-section">
       <h3>外观主题</h3>
       <div class="settings-grid">
-        <div class="setting-field">
-          <label>背景图片 URL</label>
-          <input type="text" id="cfg-bg-image" placeholder="https://... 或 /assets/bg.jpg（留空=无背景）">
-        </div>
-        <div class="setting-field">
-          <label>背景预览</label>
+        <div class="setting-field" style="grid-column:1/-1">
+          <label>背景图片</label>
+          <div class="bg-upload-row">
+            <input type="text" id="cfg-bg-image" placeholder="手动输入URL，或拖拽图片到下方区域自动上传" style="flex:1">
+            <div class="drop-zone-inline" id="drop-zone">
+              <span class="dz-icon-sm">📁</span> 拖拽或点击上传
+              <input type="file" id="file-input" multiple accept="image/*">
+            </div>
+          </div>
+          <div class="upload-progress" id="upload-progress"></div>
           <div class="bg-preview" id="cfg-bg-preview"></div>
         </div>
         <div class="setting-field">
@@ -284,6 +288,10 @@ a{color:var(--primary);text-decoration:none}a:hover{text-decoration:underline}
           <input type="number" id="cfg-per-page" min="1" max="50" value="10">
         </div>
       </div>
+      <details style="margin-top:12px">
+        <summary style="cursor:pointer;color:var(--muted);font-size:.85rem">已上传的素材文件</summary>
+        <ul class="file-list" id="file-list" style="margin-top:8px"></ul>
+      </details>
     </div>
 
     <div class="settings-section">
@@ -300,19 +308,6 @@ a{color:var(--primary);text-decoration:none}a:hover{text-decoration:underline}
     <span class="status" id="settings-status" style="margin-left:12px"></span>
   </div>
 
-  <!-- ===== Files Tab ===== -->
-  <div class="tab-panel" id="tab-files">
-    <div class="drop-zone" id="drop-zone">
-      <div class="dz-icon">📁</div>
-      <p>拖拽文件到此处上传，或点击选择文件</p>
-      <p style="font-size:.8rem">图片会存入 source/assets/ 目录，上传后自动部署</p>
-      <input type="file" id="file-input" multiple accept="image/*">
-    </div>
-    <div class="upload-progress" id="upload-progress"></div>
-    <h3 style="margin-bottom:10px">已上传文件</h3>
-    <button class="btn btn-sm" id="refresh-files-btn" style="margin-bottom:8px">刷新</button>
-    <ul class="file-list" id="file-list"></ul>
-  </div>
 </div>
 
 <script>
@@ -634,8 +629,7 @@ function switchTab(name) {
   document.querySelectorAll('.tab-panel').forEach(function(p) { p.classList.remove('active'); });
   document.querySelector('[data-tab=' + name + ']').classList.add('active');
   $('tab-' + name).classList.add('active');
-  if (name === 'settings') loadSettings();
-  if (name === 'files') loadFiles();
+  if (name === 'settings') { loadSettings(); loadFiles(); }
 }
 
 // ===== Settings =====
@@ -786,8 +780,7 @@ function loadFiles() {
         li.appendChild(img);
       } else {
         var icon = document.createElement('span');
-        icon.textContent = '📄';
-        icon.style.fontSize = '1.5rem';
+        icon.textContent = '📄 ';
         li.appendChild(icon);
       }
       var nameSpan = document.createElement('span');
@@ -795,18 +788,15 @@ function loadFiles() {
       nameSpan.textContent = f.name;
       li.appendChild(nameSpan);
 
-      var copyBtn = document.createElement('button');
-      copyBtn.className = 'btn btn-sm';
-      copyBtn.textContent = '复制URL';
-      copyBtn.onclick = function() {
-        var url = f.download_url;
-        navigator.clipboard.writeText(url).then(function() {
-          setStatus('已复制: ' + url);
-        }).catch(function() {
-          setStatus(url);
-        });
+      var useBtn = document.createElement('button');
+      useBtn.className = 'btn btn-sm';
+      useBtn.textContent = '设为背景';
+      useBtn.onclick = function() {
+        $('cfg-bg-image').value = f.download_url;
+        updateBgPreview();
+        setSettingsStatus('已设为背景图: ' + f.download_url);
       };
-      li.appendChild(copyBtn);
+      li.appendChild(useBtn);
 
       var delBtn = document.createElement('button');
       delBtn.className = 'btn btn-sm btn-danger';
@@ -818,40 +808,73 @@ function loadFiles() {
           body: { message: 'Delete ' + f.name, sha: f.sha, branch: 'main' }
         }).then(function() {
           loadFiles();
-          setStatus('已删除: ' + f.name);
+        }).catch(function(err) {
+          setSettingsStatus('删除失败: ' + err.message);
         });
       };
       li.appendChild(delBtn);
       list.appendChild(li);
     });
     if (!files || files.length === 0) {
-      list.innerHTML = '<li style="color:var(--muted)">暂无文件</li>';
+      list.innerHTML = '<li style="color:var(--muted)">暂无文件，上传后在此管理</li>';
     }
   }).catch(function() {
-    // assets folder may not exist yet
-    $('file-list').innerHTML = '<li style="color:var(--muted)">暂无文件</li>';
+    $('file-list').innerHTML = '<li style="color:var(--muted)">暂无文件，上传后在此管理</li>';
   });
 }
 
 function uploadFile(file) {
-  var reader = new FileReader();
   var progress = $('upload-progress');
+  if (!progress) return;
   progress.textContent = '上传中: ' + file.name + '...';
+  var reader = new FileReader();
+  reader.onerror = function() {
+    progress.textContent = '读取文件失败: ' + file.name;
+  };
   reader.onload = function(e) {
-    var base64 = e.target.result.split(',')[1];
-    var path = '/repos/' + REPO + '/contents/source/assets/' + file.name;
-    // Check if file exists to get SHA
-    api(path).then(function(existing) {
-      return api(path, { method: 'PUT', body: { message: 'Upload ' + file.name, content: base64, sha: existing.sha, branch: 'main' } });
-    }).catch(function() {
-      return api(path, { method: 'PUT', body: { message: 'Upload ' + file.name, content: base64, branch: 'main' } });
-    }).then(function() {
-      progress.textContent = '已上传: ' + file.name;
-      loadFiles();
-      triggerDeploy().catch(function() {});
-    }).catch(function(err) {
-      progress.textContent = '上传失败: ' + err.message;
-    });
+    var base64;
+    // readAsDataURL result: data:mime/type;base64,XXXX
+    var result = e.target.result;
+    if (result.indexOf(',') > -1) {
+      base64 = result.split(',')[1];
+    } else {
+      base64 = result;
+    }
+    var apiPath = '/repos/' + REPO + '/contents/source/assets/' + file.name;
+
+    // Try to create directly first (no SHA needed for new files)
+    api(apiPath, { method: 'PUT', body: { message: 'Upload ' + file.name, content: base64, branch: 'main' } })
+      .then(function(res) {
+        progress.textContent = '已上传: ' + file.name;
+        // Auto-fill background image URL
+        var bgInput = $('cfg-bg-image');
+        if (bgInput && res && res.content && res.content.download_url) {
+          bgInput.value = res.content.download_url;
+          updateBgPreview();
+        }
+        loadFiles();
+        triggerDeploy().catch(function() {});
+      })
+      .catch(function(err) {
+        // If file already exists, retry with SHA
+        if (err.message && err.message.indexOf('sha') > -1) {
+          api(apiPath).then(function(existing) {
+            return api(apiPath, { method: 'PUT', body: { message: 'Upload ' + file.name, content: base64, sha: existing.sha, branch: 'main' } });
+          }).then(function(res) {
+            progress.textContent = '已更新: ' + file.name;
+            if (res && res.content && res.content.download_url) {
+              var bgInput = $('cfg-bg-image');
+              if (bgInput) { bgInput.value = res.content.download_url; updateBgPreview(); }
+            }
+            loadFiles();
+            triggerDeploy().catch(function() {});
+          }).catch(function(e2) {
+            progress.textContent = '上传失败: ' + e2.message;
+          });
+        } else {
+          progress.textContent = '上传失败: ' + err.message;
+        }
+      });
   };
   reader.readAsDataURL(file);
 }
@@ -879,25 +902,27 @@ document.querySelectorAll('.tab-btn').forEach(function(btn) {
 $('save-settings-btn').addEventListener('click', saveSettings);
 $('cfg-bg-image').addEventListener('input', updateBgPreview);
 
-// File events
-$('drop-zone').addEventListener('click', function() { $('file-input').click(); });
-$('file-input').addEventListener('change', function() {
-  var files = this.files;
-  for (var i = 0; i < files.length; i++) uploadFile(files[i]);
-  this.value = '';
-});
-$('refresh-files-btn').addEventListener('click', function() { loadFiles().then(function() { setStatus('已刷新'); }); });
-
-// Drag and drop
+// File upload events (inside settings tab)
 var dz = $('drop-zone');
-dz.addEventListener('dragover', function(e) { e.preventDefault(); dz.classList.add('drag-over'); });
-dz.addEventListener('dragleave', function() { dz.classList.remove('drag-over'); });
-dz.addEventListener('drop', function(e) {
-  e.preventDefault();
-  dz.classList.remove('drag-over');
-  var files = e.dataTransfer.files;
-  for (var i = 0; i < files.length; i++) uploadFile(files[i]);
-});
+if (dz) {
+  dz.addEventListener('click', function() { var fi = $('file-input'); if (fi) fi.click(); });
+  dz.addEventListener('dragover', function(e) { e.preventDefault(); dz.classList.add('drag-over'); });
+  dz.addEventListener('dragleave', function() { dz.classList.remove('drag-over'); });
+  dz.addEventListener('drop', function(e) {
+    e.preventDefault();
+    dz.classList.remove('drag-over');
+    var files = e.dataTransfer.files;
+    for (var i = 0; i < files.length; i++) uploadFile(files[i]);
+  });
+}
+var fi = $('file-input');
+if (fi) {
+  fi.addEventListener('change', function() {
+    var files = this.files;
+    for (var i = 0; i < files.length; i++) uploadFile(files[i]);
+    this.value = '';
+  });
+}
 
 // Preview toggle
 var previewDetails = document.querySelector('#tab-posts details');
