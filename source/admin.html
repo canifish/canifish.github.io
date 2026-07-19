@@ -394,11 +394,11 @@ function encryptContent(password, plaintext) {
 }
 
 // ===== Save =====
-function savePost(meta, body, sha) {
+function savePost(meta, body, sha, oldFileName) {
   var frontmatter = buildFrontmatter(meta);
   var raw = body ? frontmatter + '\n' + body : frontmatter + '\n';
   var content = toBase64(raw);
-  var fileName = (meta.slug || meta.title.replace(/[\/\\:*?"<>|]/g, '').replace(/\s+/g, '-').toLowerCase()) + '.md';
+  var fileName = oldFileName || (meta.slug || meta.title.replace(/[\/\\:*?"<>|]/g, '').replace(/\s+/g, '-').toLowerCase()) + '.md';
   if (!fileName.endsWith('.md')) fileName += '.md';
 
   var payload = {
@@ -410,9 +410,7 @@ function savePost(meta, body, sha) {
 
   var path = '/repos/' + REPO + '/contents/source/_posts/' + fileName;
   return api(path, { method: 'PUT', body: payload }).then(function(result) {
-    CURRENT_SHA = result.content.sha;
-    CURRENT_FILE = fileName;
-    return result;
+    return { content: result.content, fileName: fileName };
   });
 }
 
@@ -570,13 +568,35 @@ function doSave() {
   var body = $('content-input').value.trim();
   setStatus('保存中...');
 
-  var save = function(finalBody) {
-    savePost(meta, finalBody, CURRENT_SHA).then(function() {
-      setStatus('已保存，正在部署...');
+  var save = function(finalBody, retry) {
+    retry = retry || 0;
+    savePost(meta, finalBody, CURRENT_SHA, CURRENT_FILE).then(function(result) {
+      CURRENT_SHA = result.content.sha;
+      CURRENT_FILE = result.fileName;
       setStatus('已保存，稍后访问博客查看');
       loadPosts();
     }).catch(function(err) {
-      setStatus('保存失败: ' + err.message);
+      if (retry < 2 && err.message && err.message.indexOf('sha') > -1 && CURRENT_FILE) {
+        // SHA stale: re-read the post and retry
+        setStatus('文件已变更，重试中...');
+        api('/repos/' + REPO + '/contents/source/_posts/' + CURRENT_FILE).then(function(data) {
+          var parsed = parseFrontmatter(fromBase64(data.content));
+          CURRENT_SHA = data.sha;
+          var retryBody = finalBody;
+          // Re-encrypt if needed (meta hasn't changed, just re-save with new SHA)
+          savePost(meta, retryBody, data.sha, CURRENT_FILE).then(function(r2) {
+            CURRENT_SHA = r2.content.sha;
+            setStatus('已保存，稍后访问博客查看');
+            loadPosts();
+          }).catch(function(e2) {
+            setStatus('重试失败: ' + e2.message);
+          });
+        }).catch(function(e2) {
+          setStatus('重试失败: ' + e2.message);
+        });
+      } else {
+        setStatus('保存失败: ' + err.message);
+      }
     });
   };
 
@@ -723,8 +743,11 @@ function saveSettings() {
     return;
   }
   setSettingsStatus('保存中...');
+  doSaveSettings(CFG_RAW, CFG_SHA, THEME_CFG_RAW, THEME_CFG_SHA, 0);
+}
 
-  var cfg = CFG_RAW;
+function doSaveSettings(cfgRaw, cfgSha, themeRaw, themeSha, retryCount) {
+  var cfg = cfgRaw;
   cfg = yamlSetLine(cfg, 'title', $('cfg-title').value.trim() || 'My Blog');
   cfg = yamlSetLine(cfg, 'subtitle', $('cfg-subtitle').value.trim() || "''");
   cfg = yamlSetLine(cfg, 'description', $('cfg-desc').value.trim() || "''");
@@ -735,7 +758,7 @@ function saveSettings() {
     cfg = cfg.replace(/(index_generator:\n)/, '$1  per_page: ' + ($('cfg-per-page').value || '10') + '\n');
   }
 
-  var theme = THEME_CFG_RAW;
+  var theme = themeRaw;
   var m1n = $('cfg-menu1-name').value.trim() || 'Home';
   var m1u = $('cfg-menu1-url').value.trim() || '/';
   var m2n = $('cfg-menu2-name').value.trim() || 'Archives';
@@ -743,13 +766,12 @@ function saveSettings() {
   theme = theme.replace(/menu:\n([\s\S]*?)(?=\n\w|$)/, function() {
     return 'menu:\n  ' + m1n + ': ' + m1u + '\n  ' + m2n + ': ' + m2u;
   });
-
   theme = yamlSetLine(theme, 'bg_image', $('cfg-bg-image').value.trim() || "''");
   theme = yamlSetLine(theme, 'dark_mode', $('cfg-dark-mode').value);
   theme = yamlSetLine(theme, 'github', $('cfg-social-github').value.trim() || "''");
 
-  var cfgPayload = { message: 'Update site config', content: toBase64(cfg), sha: CFG_SHA, branch: 'main' };
-  var themePayload = { message: 'Update theme config', content: toBase64(theme), sha: THEME_CFG_SHA, branch: 'main' };
+  var cfgPayload = { message: 'Update site config', content: toBase64(cfg), sha: cfgSha, branch: 'main' };
+  var themePayload = { message: 'Update theme config', content: toBase64(theme), sha: themeSha, branch: 'main' };
 
   Promise.all([
     api('/repos/' + REPO + '/contents/_config.yml', { method: 'PUT', body: cfgPayload }),
@@ -757,10 +779,27 @@ function saveSettings() {
   ]).then(function(results) {
     CFG_SHA = results[0].content.sha;
     THEME_CFG_SHA = results[1].content.sha;
+    CFG_RAW = cfg;
+    THEME_CFG_RAW = theme;
     setSettingsStatus('已保存，GitHub Actions 将自动部署');
   }).catch(function(err) {
-    setSettingsStatus('保存失败: ' + err.message);
-    console.error('saveSettings failed:', err);
+    if (retryCount < 2 && err.message && err.message.indexOf('sha') > -1) {
+      // SHA mismatch: re-read files and retry with fresh SHAs
+      setSettingsStatus('文件已变更，重新读取后重试...');
+      Promise.all([
+        api('/repos/' + REPO + '/contents/_config.yml'),
+        api('/repos/' + REPO + '/contents/themes/minimal/_config.yml')
+      ]).then(function(results) {
+        var newCfg = fromBase64(results[0].content);
+        var newTheme = fromBase64(results[1].content);
+        doSaveSettings(newCfg, results[0].sha, newTheme, results[1].sha, retryCount + 1);
+      }).catch(function(e2) {
+        setSettingsStatus('重试失败: ' + e2.message);
+      });
+    } else {
+      setSettingsStatus('保存失败: ' + err.message);
+      console.error('saveSettings failed:', err);
+    }
   });
 }
 
