@@ -165,7 +165,7 @@ a{color:var(--primary);text-decoration:none}a:hover{text-decoration:underline}
 <!-- ===== Login ===== -->
 <div class="login-overlay" id="login-screen">
   <h1>Blog Admin</h1>
-  <p>需要 GitHub Personal Access Token 来管理文章。<br>在 <a href="https://github.com/settings/tokens" target="_blank">GitHub Settings → Tokens</a> 创建一个，勾选 <b>repo</b> 权限。</p>
+  <p>需要 GitHub Personal Access Token 来管理文章。<br>点此 <a href="https://github.com/settings/tokens/new?scopes=repo&description=blog-admin" target="_blank">一键创建 Token</a>（已预选 repo 权限），生成后粘贴到下方。<br><b style="color:var(--danger)">Token 仅保存在你的浏览器本地，不会上传到任何第三方。</b></p>
   <input type="password" id="token-input" placeholder="ghp_xxxxxxxxxxxx" autocomplete="off">
   <button id="login-btn">登录</button>
   <div class="err" id="login-err"></div>
@@ -651,6 +651,7 @@ function doSave() {
 function doLogin() {
   var token = $('token-input').value.trim();
   if (!token) { $('login-err').textContent = '请输入 Token'; return; }
+  localStorage.removeItem('blog_admin_token');
   TOKEN = token;
   api('/user').then(function(user) {
     return api('/repos/' + REPO).then(function() {
@@ -659,11 +660,11 @@ function doLogin() {
       $('app').classList.add('active');
       loadPosts().then(function() { setStatus('已登录: ' + user.login); });
     }).catch(function() {
-      $('login-err').textContent = 'Token 有效但没有该仓库的访问权限。';
+      $('login-err').textContent = 'Token 有效但没有仓库权限，请确认勾选了 repo 权限。';
       TOKEN = '';
     });
   }).catch(function(err) {
-    $('login-err').textContent = '登录失败: ' + err.message;
+    $('login-err').textContent = '登录失败: ' + err.message + '。请在 GitHub Settings → Developer settings → Personal access tokens → Tokens (classic) 生成新 Token，勾选 repo 权限。';
   });
 }
 
