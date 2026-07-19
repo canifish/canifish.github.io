@@ -576,7 +576,7 @@ function doSave() {
       setStatus('已保存，稍后访问博客查看');
       loadPosts();
     }).catch(function(err) {
-      if (retry < 2 && err.message && (err.message.indexOf('does not match') > -1 || err.message.indexOf('sha') > -1) && CURRENT_FILE) {
+      if (retry < 2 && err.message && (err.message.indexOf('does not match') > -1 || err.message.indexOf('expected') > -1 || err.message.indexOf('is at') > -1) && CURRENT_FILE) {
         // SHA stale: re-read the post and retry
         setStatus('文件已变更，重试中...');
         api('/repos/' + REPO + '/contents/source/_posts/' + CURRENT_FILE).then(function(data) {
@@ -786,7 +786,7 @@ function doSaveSettings(cfgRaw, cfgSha, themeRaw, themeSha, retryCount) {
     setSettingsStatus('已保存，GitHub Actions 将自动部署');
   }).catch(function(err) {
     var msg = err.message || '';
-    if (retryCount < 2 && (msg.indexOf('does not match') > -1 || msg.indexOf('sha') > -1 || msg.indexOf('SHA') > -1)) {
+    if (retryCount < 2 && (msg.indexOf('does not match') > -1 || msg.indexOf('sha') > -1 || msg.indexOf('expected') > -1 || msg.indexOf('is at') > -1)) {
       setSettingsStatus('文件已被其他操作更新，重新读取后重试...');
       Promise.all([
         api('/repos/' + REPO + '/contents/_config.yml'),
