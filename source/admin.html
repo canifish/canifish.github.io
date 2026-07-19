@@ -468,10 +468,15 @@ function doLogin() {
   if (!token) { $('login-err').textContent = '请输入 Token'; return; }
   TOKEN = token;
   api('/user').then(function(user) {
-    localStorage.setItem('blog_admin_token', token);
-    $('login-screen').style.display = 'none';
-    $('app').classList.add('active');
-    loadPosts().then(function() { setStatus('已登录: ' + user.login); });
+    return api('/repos/' + REPO).then(function() {
+      localStorage.setItem('blog_admin_token', token);
+      $('login-screen').style.display = 'none';
+      $('app').classList.add('active');
+      loadPosts().then(function() { setStatus('已登录: ' + user.login); });
+    }).catch(function() {
+      $('login-err').textContent = 'Token 有效但没有该仓库的访问权限。';
+      TOKEN = '';
+    });
   }).catch(function(err) {
     $('login-err').textContent = '登录失败: ' + err.message;
   });
@@ -497,11 +502,17 @@ if (savedToken) {
   $('token-input').value = savedToken;
   TOKEN = savedToken;
   api('/user').then(function(user) {
-    $('login-screen').style.display = 'none';
-    $('app').classList.add('active');
-    loadPosts().then(function() { setStatus('已登录: ' + user.login); });
+    return api('/repos/' + REPO).then(function() {
+      $('login-screen').style.display = 'none';
+      $('app').classList.add('active');
+      loadPosts().then(function() { setStatus('已登录: ' + user.login); });
+    }).catch(function() {
+      localStorage.removeItem('blog_admin_token');
+      $('login-err').textContent = '会话已过期：无仓库访问权限。';
+    });
   }).catch(function() {
     localStorage.removeItem('blog_admin_token');
+    $('login-err').textContent = '会话已过期，请重新登录。';
   });
 }
 </script>
