@@ -13,5 +13,15 @@
     background-attachment: fixed;
     background-position: center;
   }
+  .post-content, .post-item, .page-content, .archive, .password-prompt {
+    background: rgba(255,255,255,0.88);
+    border-radius: 8px;
+    padding: 24px;
+  }
+  @media (prefers-color-scheme: dark) {
+    .post-content, .post-item, .page-content, .archive, .password-prompt {
+      background: rgba(26,26,46,0.88);
+    }
+  }
 </style>
 <% } %>
