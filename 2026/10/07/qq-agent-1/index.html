@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>qq-agent-1 - 让我钓个鱼行不</title>
+<meta name="description" content="">
+<meta name="author" content="canifish">
+<link rel="stylesheet" href="/css/style.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📝</text></svg>">
+
+<link rel="preload" as="image" href="https://raw.githubusercontent.com/canifish/canifish.github.io/main/source/assets/blog3.png">
+<style>
+  body {
+    background-color: #3a3a4a;
+    background-image: url('https://raw.githubusercontent.com/canifish/canifish.github.io/main/source/assets/blog3.png');
+    background-size: cover;
+    background-attachment: fixed;
+    background-position: center;
+  }
+  .post-content, .post-item, .page-content, .archive, .password-prompt {
+    background: rgba(255,255,255,0.88);
+    border-radius: 8px;
+    padding: 24px;
+  }
+  @media (prefers-color-scheme: dark) {
+    body { background-color: #1a1a2e; }
+    .post-content, .post-item, .page-content, .archive, .password-prompt {
+      background: rgba(26,26,46,0.88);
+    }
+  }
+</style>
+
+
+<meta name="generator" content="Hexo 8.1.2"></head>
+<body>
+  <header class="header">
+  <div class="container">
+    <a href="/" class="site-title">让我钓个鱼行不</a>
+    <nav class="nav">
+      
+        <a href="/">Home</a>
+      
+        <a href="/archives">Archives</a>
+      
+      
+        <a href="https://github.com/canifish" target="_blank" title="GitHub">GitHub</a>
+      
+    </nav>
+  </div>
+</header>
+
+  <main class="main">
+    <div class="container">
+      
+  <article class="post">
+    <header class="post-header">
+      <h1 class="post-title">qq-agent-1</h1>
+      <time class="post-date" datetime="2026-10-08">
+        2026-10-08
+      </time>
+    </header>
+    <div class="post-content">
+      <p>插件开发日志 1：私聊主动找我、表情包仓库、输出格式强约束<br>一句话：这一夜（其实是 33 小时）里我给 QQ Agent 装了三个新扩展、改了一个市场插件：让它冷场时会主动私聊找我、只用我硬盘上的表情包、按我规定的格式输出。</p>
+<p>成品：</p>
+<p>类型	id	显示名	版本<br>插件	private-topic	私聊主动找你	v1.0.0<br>技能	sticker-vault	表情包仓库	v1.0.0 → v1.8.0<br>插件	output-rules	输出格式强约束	v1.0.0 → v1.3.3<br>插件（市场插件本地补丁）	early-finish	token 直接减半	→ v1.1.0<br>周期：2026-10-07 01:01 → 10-08 10:42。我全程只发了 44 句话，其中不少是「继续」「跑」「不管了」。</p>
+<p>一、private-topic：让它冷场时主动来找我<br>需求（我的原话）：「我需要它每隔一段时间自动向我发起话题」，后来补了两句：「且应该是概率触发的」「概率也由我随意填写」。</p>
+<p>宿主原本只有”群聊里没人说话时主动冒泡”，私聊主动开口这件事没有。判定依然是插件（时间驱动，规则能写死），挂链式 setTimeout：</p>
+<p>默认 90 秒后第一次检查，之后按 checkIntervalMinutes（默认 30 分钟）循环；<br>冷场判定只读 data\messages\private_<uid>.json 这个存档，不额外开销；<br>概率 probability（默认 0.25）、免打扰时段（默认 1:00–8:00）、最小间隔 180 分钟、每天最多 4 条；<br>话题由模型自己想，然后通过 OneBot HTTP send_private_msg 直接发出去；<br>还带了硬下限：最小间隔 60 秒、每天最多 60 条——防止我把它自己配成 spam 机器。<br>最险的一个 bug：直连 HTTP 发送会绕过宿主自己的 CQ 码转义。也就是说，如果模型输出里带了 [CQ:image,file&#x3D;file:&#x2F;&#x2F;&#x2F;C:&#x2F;…]，是可以把本机文件当图片发出去的。修法是走宿主的 escapeCqText + 段数组发送，再用一个假 OneBot 抓线上真实字节确认——最后抓到的确实是全角的 [CQ：。</p>
+<p>试运行里它自己想的开场白挺有意思：「刚翻本子才发现上次有页写反了，难怪怎么算都不对喵」。</p>
+<p>二、sticker-vault：只用我硬盘上的表情包<br>需求：「让 ai 在聊天时从本地指定路径图片库调取图片表情包进行使用」，然后我追问了一句关键的——「我需要的是它一旦需要用到表情包都只从本地调用，你确定实现我的需求了吗」。</p>
+<p>第一版确实没做到：只是在提示词里”引导”，三个原有出口（QQ 收藏表情 send_sticker、发网图 send_image、搜网图 search_images）一个都没堵。agent 直接认账：「你说得对，我没有完全实现」。</p>
+<p>改成 tool.guard 硬封锁之后是这样的：只要这个技能启用着，那三个工具会被从模型的工具列表里彻底移除——看不见也调不到，没有第二个出口，而且没有开关（想恢复只能关掉整个技能）。搜索类工具名少一个字母的变体（search-image__search_image）后来也被补进了封锁名单。</p>
+<p>工作方式是”看一次，之后只认名字和分类”：</p>
+<p>6 个工具：list_local、look_local（看图起名，声明需要视觉）、label_local（起名必须从固定分类表里选一个）、send_local、send_random（优先挑最久没用过的）、rescan_local；<br>每张图只在第一次被模型看过一眼，之后按分类 &#x2F; 名字直接调取，token 开销接近零；<br>分类是闭合枚举，18 类：开心 &#x2F; 无奈 &#x2F; 生气 &#x2F; 难过 &#x2F; 害羞 &#x2F; 惊讶 &#x2F; 嘲讽 &#x2F; 赞同 &#x2F; 拒绝 &#x2F; 打招呼 &#x2F; 关心 &#x2F; 沙雕 &#x2F; 发呆 &#x2F; 困 &#x2F; 偷看 &#x2F; 紧张 &#x2F; 插画 &#x2F; 其他。<br>分类这件小事最后变成了大工程：我要求它把 E:\canifish\表情包 里 939 张图全看一遍并分类（跳过 gif）。最后是 40 个并行子 agent 分批看，每批 22 张，另外 4 个专门处理 GIF。分类表前后改了两次：</p>
+<p>第一版 13 类，凭想象拍的 → 「其他」这一类爆到 95 张，因为漏了「发呆 &#x2F; 困 &#x2F; 偷看 &#x2F; 紧张 &#x2F; 插画」这些高频语义；<br>改成 18 类、按真实素材分布定之后 → 「其他」从 95 降到 3，最大的一类是「无奈」183 张。<br>教训很直白：分类表既不能自由发挥（会碎成「开心 &#x2F; 高兴 &#x2F; 快乐」各一类，反而找不全），也不能拍脑袋。</p>
+<p>另外几个真实的坑：</p>
+<p>487 个文件被别的进程锁死（EBUSY，只读能打开，60 秒探针也不释放）。排查排除了 OneDrive、技能自身、看图工具，嫌疑最大的是百度网盘（当时 10 个进程）。绕法是把锁住的原件复制进分类文件夹、让库只认子文件夹。<br>清理任务用 Start-Process 起的话会被连进程树回收（日志只有第 1 轮），最后改用 Windows 计划任务 QQAgent-StickerCleanup（每 15 分钟、VBS 隐藏窗口、干完自注销）。<br>“整条覆盖写漏字段”这类 bug 出现了三次（漏 cls 会把分类抹掉，漏 size&#x2F;mtime 会让”图片移动后认领”失效），最后收口到一个 entryToStore() 函数里。<br>分类里有一张 其他&#x2F;540.jpg 其实是 ICO 改了扩展名，被魔数校验挡住；后来转成 PNG 收进库，起名「冒头登场」、归类「打招呼」。<br>三、output-rules：输出格式我说了算<br>需求：「制作一个插件，让我可以强行规定限制 ai 的输入内容格式……分句数量自由设置，表情包数量自由设置，字数输出自由设置，输出内容排序自由设置，增加适配特殊输出的其他向自由设置」。后来我又把排序要求改得更细：「设置输出一句话，接上一张图片，再输出两句话，接上随意张图片，所有的关于数量的限制应该是存在上下限范围的」，以及「无法输出特殊的内容，如用括号（）包含住的状态栏」。</p>
+<p>实现方式是直接改写模型的工具调用参数：挂 llm.response 转换器，把 result.message.tool_calls[].function.arguments 拆开、合并、增加、删除、重排；再用 before-tool 否决超额的表情包，需要时注入 sticker-vault__send_random 补发一张。</p>
+<p>它的配置项最后长到了 26 项，包括：</p>
+<p>输出模式，语法像这样：1句 1图 2句 图*、1-3句 2<del>5图、特殊 槽；<br>句数 &#x2F; 条数 &#x2F; 单条字数 &#x2F; 总字数 &#x2F; 表情包数量各自的上下限；<br>特殊内容用括号包（默认 （），可以用 | 配多组）——就是我要的”状态栏”；<br>去 markdown、试运行、什么时候自动补发表情包等。<br>实测期望效果是：2</del>5 段连发（每段 ≤60 字、每段带引用）→ 表情包 → 状态栏。</p>
+<p>四、early-finish 本地补丁：不发图不许收尾<br>这是市场插件，我只在本地加了一项 requireSticker（默认开）：本批没发过表情包就不允许收尾。顺带一个数字：关掉 early-finish 的话，每轮要多烧大约 2 万 token——它原本就是靠”提前结束”省钱的。</p>
+<p>五、那次被当面戳穿的”审查”<br>我在用的时候发现效果不对，说了句：「你根本就没有好好审查所有插件和 skill 的相互兼容性，我在使用时没有达到我想要的效果」。</p>
+<p>agent 认账，并且自评了三条，我觉得比任何总结都值：</p>
+<p>上一次做的是结构审查——列了”6 个扩展都挂了 before-tool”，但**”没读任何一个钩子的身体”**；<br>发现 mention-gate 的毛病后，”没顺着同一思路去查 probability-reply（同一个毛病，漏了一天）”；<br>“没拿你的真实配置跑过一次完整链路——一跑就立刻现形。”<br>一跑就现形的是这个：我把 1-3句 理解成”一条消息装 1~3 句”，而配置里的”条数上限 3”和”单条字数上限 20”是另一层限制，三个条件叠加的结果是 4 段被压成 1 段还被拦腰截断。</p>
+<p>同类问题还有一批，都是”只在合起来跑的时候才发作”的：</p>
+<p>mention-gate 和 probability-reply 的工具白名单里全是宿主工具，技能注册的工具全部漏网；<br>chatter-guard 用猴补丁塞进 Orchestrator.prototype.onIncoming；<br>一次改名的连带故障：技能从 local-stickers 改名成 sticker-vault 之后，实例 #1 的补发工具还指向旧名字 → 表情补发静默失效；更麻烦的是四张角色卡里硬编码了旧工具名（角色卡源文件 80 处 + 活配置 98 处，一共 178 处）。第一次只改了”应用副本”，结果被 sillytavern-cards 的 applyCard 重新生成时覆盖掉——agent 自己评了一句「这个错我犯了两次」。<br>GET &#x2F;api&#x2F;config 有一层脱敏会把整个 persona 字段剥掉，所以”先读再改”差点得出”活配置是干净的”这个错误结论；后来改成从磁盘读原文再 patch。<br>验证<br>每个文件 node –check；热重载日志实证（✅ 加载成功、重扫完成（watch）：N 成功 0 失败）。<br>契约测试：假 LLM + 假 OneBot 跑端到端，并抓线上真实字节；把技能注册进宿主真实的 skillManager，再调真实的 getToolAvailability()（不用自造 mock）。<br>真实数据回归：用我真实的 939 张图库和真实配置跑。<br>最后一轮 205 项 &#x2F; 7 个测试文件全通过（38 &#x2F; 58 &#x2F; 28 &#x2F; 9 &#x2F; 34 &#x2F; 24 &#x2F; 14），另外还有 106、191、56、48 等分轮记录。<br>遗留<br>data 这个实例的 output-rules 还是关闭状态；selfNickname 还是空的。<br>data 的 private-topic 目标指向了机器人自己（配置没改过来）。<br>early-finish 和 sticker-vault 属于市场扩展，更新会覆盖本地改动。<br>mention-gate 和 probability-reply 最后”一个字节没改”——因为我当时说了句「不管了」。<br>系列导航<br>插件开发日志 0：酒馆角色卡 <a href="https://canifish.github.io/2026/10/07/%E6%8F%92%E4%BB%B6%E5%BC%80%E5%8F%91%E6%97%A5%E5%BF%970-%E9%85%92%E9%A6%86%E8%A7%92%E8%89%B2%E5%8D%A1/">https://canifish.github.io/2026/10/07/插件开发日志0-酒馆角色卡/</a><br>插件开发日志 2：图谱长期记忆 <a href="https://canifish.github.io/2026/10/07/%E6%8F%92%E4%BB%B6%E5%BC%80%E5%8F%91%E6%97%A5%E5%BF%972-%E5%9B%BE%E8%B0%B1%E9%95%BF%E6%9C%9F%E8%AE%B0%E5%BF%86/">https://canifish.github.io/2026/10/07/插件开发日志2-图谱长期记忆/</a><br>插件开发日志 3：转发必读 <a href="https://canifish.github.io/2026/10/07/%E6%8F%92%E4%BB%B6%E5%BC%80%E5%8F%91%E6%97%A5%E5%BF%973-%E8%BD%AC%E5%8F%91%E5%BF%85%E8%AF%BB/">https://canifish.github.io/2026/10/07/插件开发日志3-转发必读/</a><br>全部文章见 归档<br>相关路径：</p>
+<p>E:\dsqqbot\QQ Agent\resources\app\plugins\private-topic\（3 文件 ≈ 38 KB）<br>E:\dsqqbot\QQ Agent\resources\app\skills\sticker-vault\（3 文件 ≈ 81 KB，index.js 一千多行）<br>E:\dsqqbot\QQ Agent\resources\app\plugins\output-rules\（3 文件 ≈ 78 KB，26 项设置）<br>分类工作目录留在 E:\canifish.sticker-work\（40 批结果、改名前的备份、可重跑的验证脚本）</p>
+
+    </div>
+    
+      <div class="post-tags">
+        
+          <a class="tag" href="/tags/%E5%B7%A5%E4%BD%9C/">工作</a>
+        
+      </div>
+    
+  </article>
+
+
+    </div>
+  </main>
+  <footer class="footer">
+  <div class="container">
+    <p>&copy; 2026 canifish. Powered by <a href="https://hexo.io" target="_blank">Hexo</a>. <a href="/admin.html">Manage</a></p>
+  </div>
+</footer>
+
+</body>
+</html>
